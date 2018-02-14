@@ -54,7 +54,8 @@ class EzClient::Request
   end
 
   def http_options
-    options.slice(:params, :form, :json, :body, :headers)
+    # RUBY25: Hash#slice
+    options.select { |key| [:params, :form, :json, :body, :headers].include?(key) }
   end
 
   def on_complete
