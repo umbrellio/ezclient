@@ -15,10 +15,10 @@ class EzClient::Request
     http_response = http_client.perform(http_request, http_client.default_options)
 
     EzClient::Response.new(http_response).tap do |response|
-      options[:on_complete].call(self, response, options[:metadata])
+      on_complete.call(self, response, options[:metadata])
     end
   rescue => error
-    options[:on_error].call(self, error, options[:metadata])
+    on_error.call(self, error, options[:metadata])
     raise error
   end
 
@@ -55,5 +55,13 @@ class EzClient::Request
 
   def http_options
     options.slice(:params, :form, :json, :body, :headers)
+  end
+
+  def on_complete
+    options[:on_complete] || proc {}
+  end
+
+  def on_error
+    options[:on_error] || proc {}
   end
 end

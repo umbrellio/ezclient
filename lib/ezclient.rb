@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "http"
 require "ezclient/version"
 require "ezclient/request"
 require "ezclient/response"

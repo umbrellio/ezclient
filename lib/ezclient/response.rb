@@ -18,6 +18,7 @@ class EzClient::Response
   def code
     http_response.code
   end
+  alias status code
 
   def ok?
     code.between?(200, 299)
