@@ -5,3 +5,10 @@ rvm:
   - 2.4.2
   - 2.5.0
 before_install: gem install bundler -v 1.16.1
+env: SUITE="rspec"
+matrix:
+  fast_finish: true
+  # Only run RuboCop on the latest Ruby
+  include:
+    - rvm: 2.5.0
+      env: SUITE="rubocop"
