@@ -57,7 +57,7 @@ class EzClient::Request
   end
 
   def timeout
-    options[:timeout]
+    options[:timeout]&.to_f
   end
 
   def on_complete
