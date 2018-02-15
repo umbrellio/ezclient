@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class EzClient::Request
-  DEFAULT_TIMEOUT = 15
-
   attr_accessor :verb, :url, :options
 
   def initialize(verb, url, options)
@@ -42,11 +40,11 @@ class EzClient::Request
   private
 
   def http_client
-    options.fetch(:client).timeout(timeout)
-  end
-
-  def timeout
-    options.fetch(:timeout, DEFAULT_TIMEOUT).to_f
+    @http_client ||= begin
+      client = options.fetch(:client)
+      client.timeout(timeout) if timeout
+      client
+    end
   end
 
   def http_request
@@ -56,6 +54,10 @@ class EzClient::Request
   def http_options
     # RUBY25: Hash#slice
     options.select { |key| [:params, :form, :json, :body, :headers].include?(key) }
+  end
+
+  def timeout
+    options[:timeout]
   end
 
   def on_complete

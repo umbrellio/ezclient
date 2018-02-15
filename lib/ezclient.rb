@@ -6,10 +6,9 @@ require "ezclient/request"
 require "ezclient/response"
 
 class EzClient
-  def initialize(on_complete: nil, on_error: nil)
+  def initialize(options = {})
+    self.options = options
     self.clients = {}
-    self.on_complete = on_complete
-    self.on_error = on_error
   end
 
   def request(verb, url, **options)
@@ -21,15 +20,23 @@ class EzClient
       client = HTTP::Client.new
     end
 
-    Request.new(verb, url, client: client, on_complete: on_complete, on_error: on_error, **options)
+    Request.new(verb, url, client: client, **default_options, **options)
   end
 
   private
 
-  attr_accessor :clients, :on_complete, :on_error
+  attr_accessor :options, :clients
 
   def persistent_client_for(url, timeout: 600)
     uri = HTTP::URI.parse(url)
     clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
+  end
+
+  def default_options()
+    {
+      on_complete: options[:on_complete],
+      on_error: options[:on_error],
+      timeout: options[:default_timeout],
+    }
   end
 end

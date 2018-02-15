@@ -93,10 +93,31 @@ RSpec.describe EzClient do
     end
   end
 
-  context "when keep_alive option is provided" do
+  context "when keep_alive request option is provided" do
+    let(:request_options) { Hash[keep_alive: 10] }
+
     it "sends proper Connection header" do
-      request = client.request(:post, "http://example.com", keep_alive: 10)
       expect(request.headers).to include("Connection" => "Keep-Alive")
+    end
+  end
+
+  context "when default_timeout client option is provided" do
+    let(:options) { Hash[default_timeout: 10] }
+    let(:request_options) { Hash[client: http_client] }
+    let(:http_client) { HTTP::Client.new }
+
+    it "uses it for request" do
+      expect(http_client).to receive(:timeout).with(10)
+      request.perform
+    end
+
+    context "when timeout request option is provided as well" do
+      let(:request_options) { Hash[client: http_client, timeout: 15] }
+
+      it "uses request option for request" do
+        expect(http_client).to receive(:timeout).with(15)
+        request.perform
+      end
     end
   end
 
