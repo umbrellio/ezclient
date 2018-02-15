@@ -10,7 +10,7 @@ class EzClient::Request
   end
 
   def perform
-    http_response = http_client.perform(http_request, http_client.default_options)
+    http_response = perform_request
 
     EzClient::Response.new(http_response).tap do |response|
       on_complete.call(self, response, options[:metadata])
@@ -41,8 +41,9 @@ class EzClient::Request
 
   def http_client
     @http_client ||= begin
-      client = options.fetch(:client)
-      client.timeout(timeout) if timeout
+      client = options.fetch(:client) # TODO: dup?
+      client = client.timeout(timeout) if timeout
+      client = client.basic_auth(basic_auth) if basic_auth
       client
     end
   end
@@ -56,6 +57,21 @@ class EzClient::Request
     options.select { |key| [:params, :form, :json, :body, :headers].include?(key) }
   end
 
+  def perform_request
+    retries = 0
+
+    begin
+      http_client.perform(http_request, http_client.default_options)
+    rescue *retried_exceptions
+      if retries < max_retries.to_i
+        retries += 1
+        retry
+      else
+        raise
+      end
+    end
+  end
+
   def timeout
     options[:timeout]&.to_f
   end
@@ -66,5 +82,25 @@ class EzClient::Request
 
   def on_error
     options[:on_error] || proc {}
+  end
+
+  def retried_exceptions
+    Array(options[:retry_exceptions])
+  end
+
+  def max_retries
+    options[:max_retries] || 1
+  end
+
+  def basic_auth
+    @basic_auth ||= begin
+      case options[:basic_auth]
+      when Array
+        user, password = options[:basic_auth]
+        { user: user, pass: password }
+      when Hash
+        options[:basic_auth]
+      end
+    end
   end
 end

@@ -4,6 +4,8 @@ module ApiAuth
   def self.sign!(*); end
 end
 
+SomeError = Class.new(StandardError)
+
 RSpec.describe EzClient do
   subject(:client) { described_class.new(options) }
 
@@ -107,7 +109,7 @@ RSpec.describe EzClient do
     let(:http_client) { HTTP::Client.new }
 
     it "uses it for request" do
-      expect(http_client).to receive(:timeout).with(10)
+      expect(http_client).to receive(:timeout).with(10).and_call_original
       request.perform
     end
 
@@ -115,7 +117,7 @@ RSpec.describe EzClient do
       let(:request_options) { Hash[client: http_client, timeout: "15"] }
 
       it "uses request option for request" do
-        expect(http_client).to receive(:timeout).with(15)
+        expect(http_client).to receive(:timeout).with(15).and_call_original
         request.perform
       end
     end
@@ -191,6 +193,45 @@ RSpec.describe EzClient do
         expect(response.client_error?).to eq(false)
         expect(response.server_error?).to eq(true)
       end
+    end
+  end
+
+  context "when retry_exceptions request option is provided" do
+    let(:request_options) { Hash[retry_exceptions: [SomeError]] }
+
+    context "server is responding with error" do
+      before { request_stub.to_raise(SomeError) }
+
+      it "raises exception after one retry" do
+        expect { request.perform }.to raise_error(SomeError)
+        expect(wembock_requests.size).to eq(2)
+      end
+
+      context "max_retries is 2" do
+        let(:request_options) { Hash[retry_exceptions: [SomeError], max_retries: 2] }
+
+        it "raises exception after 2 retries" do
+          expect { request.perform }.to raise_error(SomeError)
+          expect(wembock_requests.size).to eq(3)
+        end
+      end
+    end
+
+    context "server returns response after 1 retry" do
+      before { request_stub.to_raise(SomeError).to_return(body: "success") }
+
+      it "retries the response" do
+        response = request.perform
+        expect(response.body).to eq("success")
+      end
+    end
+  end
+
+  context "when basic_auth request option is provided" do
+    let(:request_options) { Hash[basic_auth: %w[user password]] }
+
+    it "adds Authorization header" do
+      expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
     end
   end
 end

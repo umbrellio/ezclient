@@ -32,11 +32,13 @@ class EzClient
     clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
   end
 
-  def default_options()
+  def default_options
     {
       on_complete: options[:on_complete],
       on_error: options[:on_error],
       timeout: options[:default_timeout],
+      retry_exceptions: options[:retry_exceptions],
+      max_retries: options[:max_retries],
     }
   end
 end
