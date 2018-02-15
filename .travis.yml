@@ -6,6 +6,7 @@ rvm:
   - 2.5.0
 before_install: gem install bundler -v 1.16.1
 env: SUITE="rspec"
+script: bundle exec $SUITE
 matrix:
   fast_finish: true
   # Only run RuboCop on the latest Ruby
