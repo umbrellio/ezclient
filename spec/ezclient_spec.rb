@@ -40,6 +40,8 @@ RSpec.describe EzClient do
       expect(response.body).to eq("some body")
       expect(response.headers).to eq("Some" => "header")
       expect(response.code).to eq(200)
+
+      expect(wembock_requests.size).to eq(1)
     end
 
     context "on_complete callback provided" do
