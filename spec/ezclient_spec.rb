@@ -90,14 +90,15 @@ RSpec.describe EzClient do
       end
 
       context "when calling perform! on client" do
-        let(:args) { [:post, "http://example.com", **request_options] }
+        let(:perform_args) { [:post, "http://example.com", **request_options] }
 
         it "raises error" do
-          expect { client.perform!(*args) }.to raise_exception do |exception|
+          expect { client.perform!(*perform_args) }.to raise_exception do |exception|
             expect(exception).to be_a(EzClient::ResponseStatusError)
             expect(exception.response).to be_a(EzClient::Response)
             expect(exception.response.body).to eq("Not Found")
             expect(exception.response.code).to eq(404)
+            expect(exception.message).to eq("Bad response code: 404")
           end
         end
       end

@@ -7,5 +7,9 @@ module EzClient
     def initialize(response)
       self.response = response
     end
+
+    def message
+      "Bad response code: #{response.code}"
+    end
   end
 end
