@@ -21,7 +21,7 @@ class EzClient::Request
   end
 
   def api_auth!(*args)
-    # raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
+    raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
     ApiAuth.sign!(http_request, *args)
     self
   end
@@ -61,7 +61,9 @@ class EzClient::Request
     retries = 0
 
     begin
-      http_client.perform(http_request, http_client.default_options)
+      retry_on_connection_error do
+        http_client.perform(http_request, http_client.default_options)
+      end
     rescue *retried_exceptions
       if retries < max_retries.to_i
         retries += 1
@@ -70,6 +72,14 @@ class EzClient::Request
         raise
       end
     end
+  end
+
+  def retry_on_connection_error
+    # This may result in 2 requests reaching the server so I hope HTTP fixes it
+    # https://github.com/httprb/http/issues/459
+    yield
+  rescue HTTP::ConnectionError
+    yield
   end
 
   def timeout

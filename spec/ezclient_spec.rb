@@ -95,6 +95,15 @@ RSpec.describe EzClient do
     end
   end
 
+  context "when connection exception occurs" do
+    before { request_stub.to_raise(HTTP::ConnectionError).to_return(body: "success") }
+
+    it "retries request once" do
+      response = request.perform
+      expect(response.body).to eq("success")
+    end
+  end
+
   context "when keep_alive request option is provided" do
     let(:request_options) { Hash[keep_alive: 10] }
 
@@ -227,7 +236,15 @@ RSpec.describe EzClient do
     end
   end
 
-  context "when basic_auth request option is provided" do
+  context "when basic_auth request option is provided as hash" do
+    let(:request_options) { Hash[basic_auth: Hash[user: "user", pass: "password"]] }
+
+    it "adds Authorization header" do
+      expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
+    end
+  end
+
+  context "when basic_auth request option is provided as array" do
     let(:request_options) { Hash[basic_auth: %w[user password]] }
 
     it "adds Authorization header" do

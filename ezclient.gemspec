@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["tycooon@yandex.ru"]
 
   spec.summary       = "An HTTP gem wrapper for easy persistent connections and more."
-  spec.homepage      = "https://github.org/umbrellio/ezclient"
+  spec.homepage      = "https://github.com/umbrellio/ezclient"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
