@@ -7,7 +7,7 @@ class EzClient::Client
   end
 
   def request(verb, url, **options)
-    options = { **default_options, **options }
+    options = { **default_options, **options } # TODO: raise on unknown options
 
     keep_alive_timeout = options.delete(:keep_alive)
     api_auth = options.delete(:api_auth)
@@ -48,7 +48,7 @@ class EzClient::Client
       on_complete: options[:on_complete],
       on_error: options[:on_error],
       retry_exceptions: options[:retry_exceptions],
-      timeout: options[:default_timeout],
+      timeout: options[:default_timeout], # TODO: rename to timeout
     }
   end
 end
