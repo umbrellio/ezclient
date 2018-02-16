@@ -20,6 +20,16 @@ class EzClient::Request
     raise error
   end
 
+  def perform!
+    response = perform
+
+    if response.error?
+      raise EzClient::ResponseStatusError, response
+    else
+      response
+    end
+  end
+
   def api_auth!(*args)
     raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
     ApiAuth.sign!(http_request, *args)

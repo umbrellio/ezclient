@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class EzClient
-  VERSION = "0.5.0"
+module EzClient
+  VERSION = "0.6.0"
 end

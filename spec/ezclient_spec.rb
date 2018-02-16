@@ -46,7 +46,21 @@ RSpec.describe EzClient do
       expect(wembock_requests.size).to eq(1)
     end
 
-    context "on_complete callback provided" do
+    context "when calling perform on client" do
+      it "performs a request" do
+        response = client.perform(:post, "http://example.com", **request_options)
+        expect(response.body).to eq("some body")
+      end
+    end
+
+    context "when calling perform! on client" do
+      it "performs a request" do
+        response = client.perform!(:post, "http://example.com", **request_options)
+        expect(response.body).to eq("some body")
+      end
+    end
+
+    context "when on_complete callback is provided" do
       let(:client_options) { Hash[on_complete: on_complete] }
       let(:calls) { [] }
 
@@ -62,6 +76,30 @@ RSpec.describe EzClient do
       it "calls the on_error callback" do
         request.perform
         expect(calls.size).to eq(1)
+      end
+    end
+
+    context "when 404 response is returned" do
+      let(:webmock_response) { Hash[status: 404, body: "Not Found"] }
+
+      context "when calling perform on client" do
+        it "performs a request" do
+          response = client.perform(:post, "http://example.com", **request_options)
+          expect(response.status).to eq(404)
+        end
+      end
+
+      context "when calling perform! on client" do
+        let(:args) { [:post, "http://example.com", **request_options] }
+
+        it "raises error" do
+          expect { client.perform!(*args) }.to raise_exception do |exception|
+            expect(exception).to be_a(EzClient::ResponseStatusError)
+            expect(exception.response).to be_a(EzClient::Response)
+            expect(exception.response.body).to eq("Not Found")
+            expect(exception.response.code).to eq(404)
+          end
+        end
       end
     end
   end
