@@ -1,15 +1,29 @@
-sudo: false
 language: ruby
+
+sudo: false
+
 rvm:
+  - jruby-9.1.15.0
+  - jruby-head
   - 2.3.5
   - 2.4.2
   - 2.5.0
-before_install: gem install bundler -v 1.16.1
+  - ruby-head
+
+before_install: gem install bundler
+
 env: SUITE="rspec"
+
 script: bundle exec $SUITE
+
 matrix:
   fast_finish: true
   # Only run RuboCop on the latest Ruby
   include:
     - rvm: 2.5.0
       env: SUITE="rubocop"
+  allow_failures:
+    - rvm: ruby-head
+    - rvm: jruby-head
+
+cache: bundler
