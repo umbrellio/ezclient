@@ -7,9 +7,9 @@ end
 SomeError = Class.new(StandardError)
 
 RSpec.describe EzClient do
-  subject(:client) { described_class.new(options) }
+  subject(:client) { described_class.new(client_options) }
 
-  let(:options) { Hash[] }
+  let(:client_options) { Hash[] }
   let(:wembock_requests) { [] }
 
   let!(:request_stub) do
@@ -47,7 +47,7 @@ RSpec.describe EzClient do
     end
 
     context "on_complete callback provided" do
-      let(:options) { Hash[on_complete: on_complete] }
+      let(:client_options) { Hash[on_complete: on_complete] }
       let(:calls) { [] }
 
       let(:on_complete) do
@@ -76,7 +76,7 @@ RSpec.describe EzClient do
     end
 
     context "when on_error callback is provided" do
-      let(:options) { Hash[on_error: on_error] }
+      let(:client_options) { Hash[on_error: on_error] }
       let(:calls) { [] }
 
       let(:on_error) do
@@ -104,8 +104,8 @@ RSpec.describe EzClient do
     end
   end
 
-  context "when keep_alive request option is provided" do
-    let(:request_options) { Hash[keep_alive: 10] }
+  context "when keep_alive client option is provided" do
+    let(:client_options) { Hash[keep_alive: 10] }
 
     it "sends proper Connection header" do
       expect(request.headers).to include("Connection" => "Keep-Alive")
@@ -113,7 +113,7 @@ RSpec.describe EzClient do
   end
 
   context "when default_timeout client option is provided" do
-    let(:options) { Hash[default_timeout: 10] }
+    let(:client_options) { Hash[default_timeout: 10] }
     let(:request_options) { Hash[client: http_client] }
     let(:http_client) { HTTP::Client.new }
 
@@ -132,7 +132,9 @@ RSpec.describe EzClient do
     end
   end
 
-  describe "#api_auth!" do
+  context "when api_auth client option is provided" do
+    let(:client_options) { Hash[api_auth: %w[id secret]] }
+
     it "signs a request using ApiAuth lib" do
       expect(ApiAuth).to receive(:sign!) do |request, access_id, access_key|
         expect(request).to be_a(HTTP::Request)
@@ -140,7 +142,7 @@ RSpec.describe EzClient do
         expect(access_key).to eq("secret")
       end
 
-      request.api_auth!("id", "secret")
+      request
     end
   end
 
