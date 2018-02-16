@@ -8,6 +8,7 @@ Add this line to your application's Gemfile:
 
 ```ruby
 gem "ezclient"
+gem "http", github: "httprb/http"
 ```
 
 ## Contributing
