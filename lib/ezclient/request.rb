@@ -64,15 +64,20 @@ class EzClient::Request
 
   def http_options
     # RUBY25: Hash#slice
-    options.select { |key| [:params, :form, :json, :body, :headers].include?(key) }
+    opts = options.select { |key| [:json, :body, :headers].include?(key) }
+    opts[verb == "GET" ? :params : :form] = options[:params]
+    opts[:params] = options[:query] if options[:query]
+    opts[:form] = options[:form] if options[:form]
+    opts
   end
 
   def perform_request
     retries = 0
+    request_options = http_client.default_options.merge(ssl_context: options[:ssl_context])
 
     begin
       retry_on_connection_error do
-        http_client.perform(http_request, http_client.default_options)
+        http_client.perform(http_request, request_options)
       end
     rescue *retried_exceptions
       if retries < max_retries.to_i

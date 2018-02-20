@@ -13,11 +13,12 @@ RSpec.describe EzClient do
   let(:wembock_requests) { [] }
 
   let!(:request_stub) do
-    stub_request(:post, "http://example.com")
+    stub_request(verb, %r{\Ahttp://example\.com})
       .with { |request| wembock_requests << request }
   end
 
-  let(:request) { client.request(:post, "http://example.com", **request_options) }
+  let(:verb) { :post }
+  let(:request) { client.request(verb, "http://example.com", **request_options) }
   let(:request_options) { Hash[] }
 
   context "when request is completed" do
@@ -46,16 +47,46 @@ RSpec.describe EzClient do
       expect(wembock_requests.size).to eq(1)
     end
 
+    context "when query request option is provided" do
+      let(:request_options) { Hash[query: Hash[a: 1]] }
+
+      it "makes proper request" do
+        request.perform
+        expect(wembock_requests.last.uri.query).to eq("a=1")
+        expect(wembock_requests.last.body).to eq("")
+      end
+    end
+
+    context "when params request option is provided" do
+      let(:request_options) { Hash[params: Hash[a: 1]] }
+
+      it "makes proper request" do
+        request.perform
+        expect(wembock_requests.last.uri.query).to eq(nil)
+        expect(wembock_requests.last.body).to eq("a=1")
+      end
+
+      context "GET request" do
+        let(:verb) { :get }
+
+        it "makes proper request" do
+          request.perform
+          expect(wembock_requests.last.uri.query).to eq("a=1")
+          expect(wembock_requests.last.body).to eq("")
+        end
+      end
+    end
+
     context "when calling perform on client" do
       it "performs a request" do
-        response = client.perform(:post, "http://example.com", **request_options)
+        response = client.perform(verb, "http://example.com", **request_options)
         expect(response.body).to eq("some body")
       end
     end
 
     context "when calling perform! on client" do
       it "performs a request" do
-        response = client.perform!(:post, "http://example.com", **request_options)
+        response = client.perform!(verb, "http://example.com", **request_options)
         expect(response.body).to eq("some body")
       end
     end
@@ -84,13 +115,13 @@ RSpec.describe EzClient do
 
       context "when calling perform on client" do
         it "performs a request" do
-          response = client.perform(:post, "http://example.com", **request_options)
+          response = client.perform(verb, "http://example.com", **request_options)
           expect(response.status).to eq(404)
         end
       end
 
       context "when calling perform! on client" do
-        let(:perform_args) { [:post, "http://example.com", **request_options] }
+        let(:perform_args) { [verb, "http://example.com", **request_options] }
 
         it "raises error" do
           expect { client.perform!(*perform_args) }.to raise_exception do |exception|
@@ -151,8 +182,8 @@ RSpec.describe EzClient do
     end
   end
 
-  context "when default_timeout client option is provided" do
-    let(:client_options) { Hash[default_timeout: 10] }
+  context "when timeout client option is provided" do
+    let(:client_options) { Hash[timeout: 10] }
     let(:request_options) { Hash[client: http_client] }
     let(:http_client) { HTTP::Client.new }
 

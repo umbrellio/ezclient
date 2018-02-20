@@ -41,14 +41,18 @@ class EzClient::Client
   end
 
   def default_options
-    {
-      api_auth: options[:api_auth],
-      keep_alive: options[:keep_alive],
-      max_retries: options[:max_retries],
-      on_complete: options[:on_complete],
-      on_error: options[:on_error],
-      retry_exceptions: options[:retry_exceptions],
-      timeout: options[:default_timeout], # TODO: rename to timeout
-    }
+    keys = %i[
+      api_auth
+      keep_alive
+      max_retries
+      on_complete
+      on_error
+      retry_exceptions
+      ssl_context
+      timeout
+    ]
+
+    # RUBY25: Hash#slice
+    options.select { |key| keys.include?(key) }
   end
 end
