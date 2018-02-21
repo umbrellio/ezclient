@@ -166,7 +166,11 @@ RSpec.describe EzClient do
   end
 
   context "when connection exception occurs" do
-    before { request_stub.to_raise(HTTP::ConnectionError).to_return(body: "success") }
+    before do
+      request_stub
+        .to_raise(HTTP::ConnectionError.new("couldn't read response headers"))
+        .to_return(body: "success")
+    end
 
     it "retries request once" do
       response = request.perform
