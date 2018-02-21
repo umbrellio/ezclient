@@ -47,37 +47,41 @@ class EzClient::Request
     http_request.headers.to_h
   end
 
+  def http_options
+    @http_options ||= http_client.default_options.merge(ssl_context: options[:ssl_context])
+  end
+
   private
 
+  def http_request
+    @http_request ||= begin
+      # RUBY25: Hash#slice
+      opts = options.select { |key| [:json, :body, :headers].include?(key) }
+      opts[verb == "GET" ? :params : :form] = options[:params]
+      opts[:params] = options[:query] if options[:query]
+      opts[:form] = options[:form] if options[:form]
+
+      http_client.build_request(verb, url, opts)
+    end
+  end
+
   def http_client
+    # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
-      client = options.fetch(:client) # TODO: dup?
+      client = options[:client].dup
       client = client.timeout(timeout) if timeout
       client = client.basic_auth(basic_auth) if basic_auth
       client
     end
   end
 
-  def http_request
-    @http_request ||= http_client.build_request(verb, url, http_options)
-  end
-
-  def http_options
-    # RUBY25: Hash#slice
-    opts = options.select { |key| [:json, :body, :headers].include?(key) }
-    opts[verb == "GET" ? :params : :form] = options[:params]
-    opts[:params] = options[:query] if options[:query]
-    opts[:form] = options[:form] if options[:form]
-    opts
-  end
-
   def perform_request
     retries = 0
-    request_options = http_client.default_options.merge(ssl_context: options[:ssl_context])
 
     begin
       retry_on_connection_error do
-        http_client.perform(http_request, request_options)
+        client = options.fetch(:client) # Use original client so that connection can be reused
+        client.perform(http_request, http_options)
       end
     rescue *retried_exceptions
       if retries < max_retries.to_i

@@ -188,20 +188,19 @@ RSpec.describe EzClient do
 
   context "when timeout client option is provided" do
     let(:client_options) { Hash[timeout: 10] }
-    let(:request_options) { Hash[client: http_client] }
-    let(:http_client) { HTTP::Client.new }
+    let(:opts) { request.http_options }
 
     it "uses it for request" do
-      expect(http_client).to receive(:timeout).with(10).and_call_original
-      request.perform
+      expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
+      expect(opts.timeout_options).to eq(global_timeout: 10)
     end
 
     context "when timeout request option is provided as well" do
-      let(:request_options) { Hash[client: http_client, timeout: "15"] }
+      let(:request_options) { Hash[timeout: "15"] }
 
       it "uses request option for request" do
-        expect(http_client).to receive(:timeout).with(15).and_call_original
-        request.perform
+        expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
+        expect(opts.timeout_options).to eq(global_timeout: 15)
       end
     end
   end
