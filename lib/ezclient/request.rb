@@ -97,8 +97,7 @@ class EzClient::Request
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield
-  rescue HTTP::ConnectionError => error
-    raise unless error.message == "couldn't read response headers"
+  rescue HTTP::ConnectionError
     yield
   end
 
