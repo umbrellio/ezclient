@@ -6,6 +6,7 @@ require "ezclient/client"
 require "ezclient/request"
 require "ezclient/response"
 require "ezclient/errors"
+require "ezclient/check_options"
 
 module EzClient
   def self.new(*args)

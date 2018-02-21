@@ -1,12 +1,23 @@
 # frozen_string_literal: true
 
 class EzClient::Request
+  OPTION_KEYS = %i[
+    body
+    form
+    json
+    metadata
+    params
+    query
+  ].freeze
+
   attr_accessor :verb, :url, :options
 
   def initialize(verb, url, options)
     self.verb = verb.to_s.upcase
     self.url = url
+    self.client = options.delete(:client)
     self.options = options
+    EzClient::CheckOptions.call(options, OPTION_KEYS + EzClient::Client::REQUEST_OPTION_KEYS)
   end
 
   def perform
@@ -53,6 +64,8 @@ class EzClient::Request
 
   private
 
+  attr_accessor :client
+
   def http_request
     @http_request ||= begin
       # RUBY25: Hash#slice
@@ -68,10 +81,10 @@ class EzClient::Request
   def http_client
     # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
-      client = options[:client].dup
-      client = client.timeout(timeout) if timeout
-      client = client.basic_auth(basic_auth) if basic_auth
-      client
+      http_client = client.dup
+      http_client = http_client.timeout(timeout) if timeout
+      http_client = http_client.basic_auth(basic_auth) if basic_auth
+      http_client
     end
   end
 
@@ -80,12 +93,13 @@ class EzClient::Request
 
     begin
       retry_on_connection_error do
-        client = options.fetch(:client) # Use original client so that connection can be reused
+        # Use original client so that connection can be reused
         client.perform(http_request, http_options)
       end
-    rescue *retried_exceptions
+    rescue *retried_exceptions => error
       if retries < max_retries.to_i
         retries += 1
+        on_retry.call(self, error, options[:metadata])
         retry
       else
         raise
@@ -97,7 +111,8 @@ class EzClient::Request
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield
-  rescue HTTP::ConnectionError
+  rescue HTTP::ConnectionError => error
+    on_retry.call(self, error, options[:metadata])
     yield
   end
 
@@ -111,6 +126,10 @@ class EzClient::Request
 
   def on_error
     options[:on_error] || proc {}
+  end
+
+  def on_retry
+    options[:on_retry] || proc {}
   end
 
   def retried_exceptions

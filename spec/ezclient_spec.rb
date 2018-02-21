@@ -57,6 +57,28 @@ RSpec.describe EzClient do
       end
     end
 
+    context "when body request option is provided" do
+      let(:request_options) { Hash[body: "some body"] }
+
+      it "makes proper request" do
+        request.perform
+        expect(wembock_requests.last.body).to eq("some body")
+      end
+    end
+
+    context "when json request option is provided" do
+      let(:request_options) { Hash[json: Hash[a: 1]] }
+
+      it "makes proper request" do
+        request.perform
+
+        expect(wembock_requests.last.body).to eq('{"a":1}')
+        expect(wembock_requests.last.headers).to include(
+          "Content-Type" => "application/json; charset=UTF-8",
+        )
+      end
+    end
+
     context "when params request option is provided" do
       let(:request_options) { Hash[params: Hash[a: 1]] }
 
@@ -172,6 +194,27 @@ RSpec.describe EzClient do
       response = request.perform
       expect(response.body).to eq("success")
     end
+
+    context "when on_retry callback is provided" do
+      let(:client_options) { Hash[on_retry: on_retry] }
+      let(:request_options) { Hash[metadata: :smth] }
+      let(:calls) { [] }
+
+      let(:on_retry) do
+        proc do |request, error, metadata|
+          expect(request.url).to eq("http://example.com")
+          expect(error).to be_a(HTTP::ConnectionError)
+          expect(metadata).to eq(:smth)
+          calls << nil
+        end
+      end
+
+      it "calls the on_retry callback" do
+        response = request.perform
+        expect(calls.size).to eq(1)
+        expect(response.body).to eq("success")
+      end
+    end
   end
 
   context "when keep_alive client option is provided" do
@@ -212,6 +255,22 @@ RSpec.describe EzClient do
       end
 
       request
+    end
+  end
+
+  context "when unknown client option is passed" do
+    let(:client_options) { Hash[foo: "smth", bar: 1] }
+
+    it "raises error" do
+      expect { client }.to raise_error(ArgumentError, "Unrecognized options: :foo, :bar")
+    end
+  end
+
+  context "when unknown request option is passed" do
+    let(:request_options) { Hash[lol: "smth", what: 1] }
+
+    it "raises error" do
+      expect { request }.to raise_error(ArgumentError, "Unrecognized options: :lol, :what")
     end
   end
 
@@ -303,6 +362,27 @@ RSpec.describe EzClient do
       it "retries the response" do
         response = request.perform
         expect(response.body).to eq("success")
+      end
+
+      context "when on_retry callback is provided" do
+        let(:client_options) { Hash[on_retry: on_retry] }
+        let(:request_options) { Hash[retry_exceptions: SomeError, metadata: :smth] }
+        let(:calls) { [] }
+
+        let(:on_retry) do
+          proc do |request, error, metadata|
+            expect(request.url).to eq("http://example.com")
+            expect(error).to be_a(SomeError)
+            expect(metadata).to eq(:smth)
+            calls << nil
+          end
+        end
+
+        it "calls the on_retry callback" do
+          response = request.perform
+          expect(calls.size).to eq(1)
+          expect(response.body).to eq("success")
+        end
       end
     end
   end

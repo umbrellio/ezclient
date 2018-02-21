@@ -1,13 +1,28 @@
 # frozen_string_literal: true
 
 class EzClient::Client
+  REQUEST_OPTION_KEYS = %i[
+    api_auth
+    basic_auth
+    headers
+    keep_alive
+    max_retries
+    on_complete
+    on_error
+    on_retry
+    retry_exceptions
+    ssl_context
+    timeout
+  ].freeze
+
   def initialize(options = {})
-    self.options = options
+    self.request_options = options
     self.clients = {}
+    EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
   end
 
   def request(verb, url, **options)
-    options = { **default_options, **options } # TODO: raise on unknown options
+    options = { **request_options, **options }
 
     keep_alive_timeout = options.delete(:keep_alive)
     api_auth = options.delete(:api_auth)
@@ -33,26 +48,10 @@ class EzClient::Client
 
   private
 
-  attr_accessor :options, :clients
+  attr_accessor :request_options, :clients
 
   def persistent_client_for(url, timeout: 600)
     uri = HTTP::URI.parse(url)
     clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
-  end
-
-  def default_options
-    keys = %i[
-      api_auth
-      keep_alive
-      max_retries
-      on_complete
-      on_error
-      retry_exceptions
-      ssl_context
-      timeout
-    ]
-
-    # RUBY25: Hash#slice
-    options.select { |key| keys.include?(key) }
   end
 end
