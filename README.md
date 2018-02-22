@@ -14,21 +14,19 @@ gem "http", github: "httprb/http" # version 3 is not supported for now
 url = "http://example.com"
 
 client_options = { timeout: 10 }
-client = EzClient.new(client_options)
+client = EzClient.new(client_options) # => EzClient::Client object
 
 request_options = { params: { a: 1 } }
-request = client.request(:get, url, request_options)
-# => EzClient::Request object
+request = client.request(:get, url, request_options) # => EzClient::Request object
 
-response = request.perform
 # Performs a GET request to https://example.com/?a=1
+response = request.perform # => EzClient::Response object
 
-response = request.perform!
 # Same request but will raise EzClient::ResponseStatusError in case of 4xx or 5xx response code
+response = request.perform!
 
 # Alternatively, you can just do:
-response = client.perform!(:get, url, request_options)
-# => EzClient::Response object
+response = client.perform!(:get, url, request_options) # => EzClient::Response object
 ```
 
 Valid client options are:
@@ -44,7 +42,7 @@ Valid client options are:
 - `ssl_context` – ssl context for requests (an `OpenSSL::SSL::SSLContext` instance)
 - `timeout` – timeout for requests in seconds
 
-All there options are passed to each request made by this client but can be overriden on per-request basis.
+All these options are passed to each request made by this client but can be overriden on per-request basis.
 
 Extra per-request only options are:
 - `body` – raw request body
