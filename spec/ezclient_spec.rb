@@ -259,18 +259,18 @@ RSpec.describe EzClient do
   end
 
   context "when unknown client option is passed" do
-    let(:client_options) { Hash[foo: "smth", bar: 1] }
+    let(:client_options) { Hash[foo: "smth", body: "smth", timeout: 5] }
 
     it "raises error" do
-      expect { client }.to raise_error(ArgumentError, "Unrecognized options: :foo, :bar")
+      expect { client }.to raise_error(ArgumentError, "Unrecognized options: :foo, :body")
     end
   end
 
   context "when unknown request option is passed" do
-    let(:request_options) { Hash[lol: "smth", what: 1] }
+    let(:request_options) { Hash[foo: "smth", body: "smth", timeout: 5] }
 
     it "raises error" do
-      expect { request }.to raise_error(ArgumentError, "Unrecognized options: :lol, :what")
+      expect { request }.to raise_error(ArgumentError, "Unrecognized options: :foo")
     end
   end
 
