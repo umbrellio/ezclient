@@ -10,11 +10,11 @@ RSpec.describe EzClient do
   subject(:client) { described_class.new(client_options) }
 
   let(:client_options) { Hash[] }
-  let(:wembock_requests) { [] }
+  let(:webmock_requests) { [] }
 
   let!(:request_stub) do
     stub_request(verb, %r{\Ahttp://example\.com})
-      .with { |request| wembock_requests << request }
+      .with { |request| webmock_requests << request }
   end
 
   let(:verb) { :post }
@@ -34,17 +34,44 @@ RSpec.describe EzClient do
       expect(request.url).to eq("http://example.com")
       expect(request.body).to eq("a=1")
 
-      expect(request.headers).to include(
+      expect(request.headers).to eq(
         "Connection" => "close",
         "Content-Type" => "application/x-www-form-urlencoded",
         "Host" => "example.com",
+        "User-Agent" => "ezclient/#{EzClient::VERSION}",
       )
 
       expect(response.body).to eq("some body")
       expect(response.headers).to eq("Some" => "header")
       expect(response.code).to eq(200)
 
-      expect(wembock_requests.size).to eq(1)
+      expect(webmock_requests.size).to eq(1)
+    end
+
+    context "when headers request options is provided" do
+      let(:request_options) { Hash[headers: { some_header: 1 }] }
+
+      it "makes request with proper headers" do
+        request.perform
+
+        expect(webmock_requests.last.headers).to include(
+          "Some-Header" => "1",
+          "User-Agent" => "ezclient/#{EzClient::VERSION}",
+        )
+      end
+
+      context "when user agent header is provided" do
+        let(:request_options) { Hash[headers: { some_header: 1, user_agent: "UA" }] }
+
+        it "makes request with proper headers" do
+          request.perform
+
+          expect(webmock_requests.last.headers).to include(
+            "Some-Header" => "1",
+            "User-Agent" => "UA",
+          )
+        end
+      end
     end
 
     context "when query request option is provided" do
@@ -52,8 +79,8 @@ RSpec.describe EzClient do
 
       it "makes proper request" do
         request.perform
-        expect(wembock_requests.last.uri.query).to eq("a=1")
-        expect(wembock_requests.last.body).to eq("")
+        expect(webmock_requests.last.uri.query).to eq("a=1")
+        expect(webmock_requests.last.body).to eq("")
       end
     end
 
@@ -62,7 +89,7 @@ RSpec.describe EzClient do
 
       it "makes proper request" do
         request.perform
-        expect(wembock_requests.last.body).to eq("some body")
+        expect(webmock_requests.last.body).to eq("some body")
       end
     end
 
@@ -72,8 +99,8 @@ RSpec.describe EzClient do
       it "makes proper request" do
         request.perform
 
-        expect(wembock_requests.last.body).to eq('{"a":1}')
-        expect(wembock_requests.last.headers).to include(
+        expect(webmock_requests.last.body).to eq('{"a":1}')
+        expect(webmock_requests.last.headers).to include(
           "Content-Type" => "application/json; charset=UTF-8",
         )
       end
@@ -84,8 +111,8 @@ RSpec.describe EzClient do
 
       it "makes proper request" do
         request.perform
-        expect(wembock_requests.last.uri.query).to eq(nil)
-        expect(wembock_requests.last.body).to eq("a=1")
+        expect(webmock_requests.last.uri.query).to eq(nil)
+        expect(webmock_requests.last.body).to eq("a=1")
       end
 
       context "GET request" do
@@ -93,8 +120,8 @@ RSpec.describe EzClient do
 
         it "makes proper request" do
           request.perform
-          expect(wembock_requests.last.uri.query).to eq("a=1")
-          expect(wembock_requests.last.body).to eq("")
+          expect(webmock_requests.last.uri.query).to eq("a=1")
+          expect(webmock_requests.last.body).to eq("")
         end
       end
     end
@@ -343,7 +370,7 @@ RSpec.describe EzClient do
 
       it "raises exception after one retry" do
         expect { request.perform }.to raise_error(SomeError)
-        expect(wembock_requests.size).to eq(2)
+        expect(webmock_requests.size).to eq(2)
       end
 
       context "max_retries is 2" do
@@ -351,7 +378,7 @@ RSpec.describe EzClient do
 
         it "raises exception after 2 retries" do
           expect { request.perform }.to raise_error(SomeError)
-          expect(wembock_requests.size).to eq(3)
+          expect(webmock_requests.size).to eq(3)
         end
       end
     end

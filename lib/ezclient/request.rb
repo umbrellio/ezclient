@@ -68,11 +68,14 @@ class EzClient::Request
 
   def http_request
     @http_request ||= begin
-      # RUBY25: Hash#slice
-      opts = options.select { |key| [:json, :body, :headers].include?(key) }
+      opts = {}
+
       opts[verb == "GET" ? :params : :form] = options[:params]
+      opts[:json] = options[:json] if options[:json]
+      opts[:body] = options[:body] if options[:body]
       opts[:params] = options[:query] if options[:query]
       opts[:form] = options[:form] if options[:form]
+      opts[:headers] = prepare_headers(options[:headers])
 
       http_client.build_request(verb, url, opts)
     end
@@ -138,6 +141,12 @@ class EzClient::Request
 
   def max_retries
     options[:max_retries] || 1
+  end
+
+  def prepare_headers(headers)
+    headers = HTTP::Headers.coerce(headers)
+    headers[:user_agent] ||= "ezclient/#{EzClient::VERSION}"
+    headers
   end
 
   def basic_auth
