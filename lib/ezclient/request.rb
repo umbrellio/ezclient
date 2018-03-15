@@ -155,7 +155,7 @@ class EzClient::Request
     timeout_args =
       # for HTTP v3
       if HTTP::Timeout::Global.ancestors.include?(HTTP::Timeout::PerOperation)
-        [:global, read: timeout]
+        [:global, read: timeout, write: 0, connect: 0]
       else
         [timeout]
       end

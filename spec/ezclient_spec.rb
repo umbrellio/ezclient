@@ -254,19 +254,29 @@ RSpec.describe EzClient do
 
   context "when timeout client option is provided" do
     let(:client_options) { Hash[timeout: 10] }
+    let(:timeout) { 10.0 }
     let(:opts) { request.http_options }
+
+    let(:expected_timeout_options) do
+      if HTTP::VERSION.to_i < 4
+        { read_timeout: timeout, write_timeout: 0, connect_timeout: 0 }
+      else
+        { global_timeout: timeout }
+      end
+    end
 
     it "uses it for request" do
       expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-      expect(opts.timeout_options.values).to eq([10]) # Keys are different in HTTP v3 and v4
+      expect(opts.timeout_options).to eq(expected_timeout_options)
     end
 
     context "when timeout request option is provided as well" do
       let(:request_options) { Hash[timeout: "15"] }
+      let(:timeout) { 15.0 }
 
       it "uses request option for request" do
         expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-        expect(opts.timeout_options.values).to eq([15]) # Keys are different in HTTP v3 and v4
+        expect(opts.timeout_options).to eq(expected_timeout_options)
       end
     end
   end
