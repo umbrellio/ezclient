@@ -258,7 +258,7 @@ RSpec.describe EzClient do
 
     it "uses it for request" do
       expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-      expect(opts.timeout_options).to eq(global_timeout: 10)
+      expect(opts.timeout_options.values).to eq([10]) # Keys are different in HTTP v3 and v4
     end
 
     context "when timeout request option is provided as well" do
@@ -266,7 +266,7 @@ RSpec.describe EzClient do
 
       it "uses request option for request" do
         expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-        expect(opts.timeout_options).to eq(global_timeout: 15)
+        expect(opts.timeout_options.values).to eq([15]) # Keys are different in HTTP v3 and v4
       end
     end
   end

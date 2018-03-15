@@ -85,7 +85,7 @@ class EzClient::Request
     # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
       http_client = client.dup
-      http_client = http_client.timeout(timeout) if timeout
+      http_client = set_timeout(http_client)
       http_client = http_client.basic_auth(basic_auth) if basic_auth
       http_client
     end
@@ -147,6 +147,20 @@ class EzClient::Request
     headers = HTTP::Headers.coerce(headers)
     headers[:user_agent] ||= "ezclient/#{EzClient::VERSION}"
     headers
+  end
+
+  def set_timeout(client)
+    return client unless timeout
+
+    timeout_args =
+      # for HTTP v3
+      if HTTP::Timeout::Global.ancestors.include?(HTTP::Timeout::PerOperation)
+        [:global, read: timeout]
+      else
+        [timeout]
+      end
+
+    client.timeout(*timeout_args)
   end
 
   def basic_auth
