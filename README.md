@@ -2,11 +2,10 @@
 EzClient is [HTTP gem](https://github.com/httprb/http) wrapper for easy persistent connections and more.
 
 ## Installation
-Add this lines to your application's Gemfile:
+Add this line to your application's Gemfile:
 
 ```ruby
 gem "ezclient"
-gem "http", github: "httprb/http" # version 3 is not supported for now
 ```
 
 ## Usage

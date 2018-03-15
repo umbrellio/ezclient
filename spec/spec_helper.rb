@@ -9,7 +9,6 @@ SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
   Coveralls::SimpleCov::Formatter,
 ])
 
-SimpleCov.minimum_coverage(100)
 SimpleCov.start
 
 require "webmock/rspec"
