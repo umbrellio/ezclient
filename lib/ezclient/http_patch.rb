@@ -16,7 +16,7 @@ unless HTTP::Client.instance_methods.include?(:build_request)
         headers: headers,
         proxy: proxy,
         body: body,
-        auto_deflate: opts.feature(:auto_deflate)
+        auto_deflate: opts.feature(:auto_deflate),
       )
     end
   end
