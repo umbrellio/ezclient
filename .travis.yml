@@ -9,7 +9,8 @@ rvm:
   - ruby-head
 
 gemfile:
-  gemfiles/http3.gemfile
+  - Gemfile
+  - gemfiles/http3.gemfile
 
 before_install: gem install bundler
 
