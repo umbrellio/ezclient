@@ -29,7 +29,7 @@ response = client.perform!(:get, url, request_options) # => EzClient::Response o
 ```
 
 Valid client options are:
-- `api_auth` – arguments for `ApiAuth.sign!`
+- `api_auth` – arguments for `ApiAuth.sign!` (see https://github.com/mgomes/api_auth)
 - `basic_auth` – arguments for basic authentication (either a hash with `:user` and `:pass` keys or a two-element array)
 - `headers` – a hash of headers for requests
 - `keep_alive` – timeout for persistent connection in seconds
