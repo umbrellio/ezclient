@@ -4,6 +4,7 @@ class EzClient::Client
   REQUEST_OPTION_KEYS = %i[
     api_auth
     basic_auth
+    cookies
     headers
     keep_alive
     max_retries

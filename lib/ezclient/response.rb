@@ -17,6 +17,10 @@ class EzClient::Response
   end
   alias status code
 
+  def cookies
+    http_response.cookies
+  end
+
   def ok?
     code.between?(200, 299)
   end

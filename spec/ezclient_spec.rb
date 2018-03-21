@@ -24,8 +24,9 @@ RSpec.describe EzClient do
   context "when request is completed" do
     before { request_stub.to_return(webmock_response) }
 
-    let(:webmock_response) { Hash[body: "some body", headers: { some: "header" }] }
+    let(:webmock_response) { Hash[body: "some body", headers: response_headers] }
     let(:request_options) { Hash[form: Hash[a: 1], metadata: :smth] }
+    let(:response_headers) { Hash[some: "header", set_cookie: "a=1"] }
 
     it "makes a request and returns a response" do
       response = request.perform
@@ -42,14 +43,16 @@ RSpec.describe EzClient do
       )
 
       expect(response.body).to eq("some body")
-      expect(response.headers).to eq("Some" => "header")
+      expect(response.headers).to eq("Some" => "header", "Set-Cookie" => "a=1")
+      expect(response.cookies.to_a[0].to_s).to eq("a=1")
       expect(response.code).to eq(200)
 
       expect(webmock_requests.size).to eq(1)
     end
 
-    context "when headers request options is provided" do
-      let(:request_options) { Hash[headers: { some_header: 1 }] }
+    context "when headers request option is provided" do
+      let(:request_options) { Hash[headers: headers] }
+      let(:headers) { Hash[some_header: 1] }
 
       it "makes request with proper headers" do
         request.perform
@@ -61,7 +64,7 @@ RSpec.describe EzClient do
       end
 
       context "when user agent header is provided" do
-        let(:request_options) { Hash[headers: { some_header: 1, user_agent: "UA" }] }
+        let(:headers) { Hash[some_header: 1, user_agent: "UA"] }
 
         it "makes request with proper headers" do
           request.perform
@@ -69,6 +72,21 @@ RSpec.describe EzClient do
           expect(webmock_requests.last.headers).to include(
             "Some-Header" => "1",
             "User-Agent" => "UA",
+          )
+        end
+      end
+
+      context "when cookies request option is provided" do
+        let(:request_options) { Hash[headers: headers, cookies: cookies] }
+        let(:cookies) { Hash[a: 1] }
+
+        it "makes request with proper headers" do
+          request.perform
+
+          expect(webmock_requests.last.headers).to include(
+            "Some-Header" => "1",
+            "User-Agent" => "ezclient/#{EzClient::VERSION}",
+            "Cookie" => "a=1",
           )
         end
       end

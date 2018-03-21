@@ -87,6 +87,7 @@ class EzClient::Request
       http_client = client.dup
       http_client = set_timeout(http_client)
       http_client = http_client.basic_auth(basic_auth) if basic_auth
+      http_client = http_client.cookies(options[:cookies]) if options[:cookies]
       http_client
     end
   end
