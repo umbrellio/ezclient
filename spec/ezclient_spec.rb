@@ -150,7 +150,7 @@ RSpec.describe EzClient do
 
         it "makes proper request" do
           request.perform
-          expect(body).to include("Content-Disposition: form-data")
+          expect(body).to include('Content-Disposition: form-data; name="a"; filename="file.txt"')
           expect(body).to include("hello\nworld")
         end
       end
