@@ -151,14 +151,20 @@ class EzClient::Request
     headers
   end
 
-  def prepare_form_params(params)
-    params.transform_values do |value|
-      if value.is_a?(File)
-        HTTP::FormData::File.new(value)
-      else
-        value
-      end
+  def prepare_form_params(original_params)
+    params = {}
+
+    # NOTE: use Hash#transform_values after Ruby 2.3 support is dropped
+    original_params.each do |key, value|
+      params[key] =
+        if value.is_a?(File)
+          HTTP::FormData::File.new(value)
+        else
+          value
+        end
     end
+
+    params
   end
 
   def set_timeout(client)
