@@ -75,6 +75,7 @@ class EzClient::Request
       opts[:body] = options[:body] if options[:body]
       opts[:params] = options[:query] if options[:query]
       opts[:form] = options[:form] if options[:form]
+      opts[:form] = prepare_form_params(opts[:form]) if opts[:form]
       opts[:headers] = prepare_headers(options[:headers])
 
       http_client.build_request(verb, url, opts)
@@ -148,6 +149,16 @@ class EzClient::Request
     headers = HTTP::Headers.coerce(headers)
     headers[:user_agent] ||= "ezclient/#{EzClient::VERSION}"
     headers
+  end
+
+  def prepare_form_params(params)
+    params.transform_values do |value|
+      if value.is_a?(File)
+        HTTP::FormData::File.new(value)
+      else
+        value
+      end
+    end
   end
 
   def set_timeout(client)

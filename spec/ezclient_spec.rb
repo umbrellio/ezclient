@@ -125,7 +125,8 @@ RSpec.describe EzClient do
     end
 
     context "when params request option is provided" do
-      let(:request_options) { Hash[params: Hash[a: 1]] }
+      let(:request_options) { Hash[params: params] }
+      let(:params) { Hash[a: 1] }
 
       it "makes proper request" do
         request.perform
@@ -140,6 +141,17 @@ RSpec.describe EzClient do
           request.perform
           expect(webmock_requests.last.uri.query).to eq("a=1")
           expect(webmock_requests.last.body).to eq("")
+        end
+      end
+
+      context "when request is using form and some param is File" do
+        let(:params) { Hash[a: File.new(Pathname.new(__dir__).join("files", "file.txt"))] }
+        let(:body) { webmock_requests.last.body }
+
+        it "makes proper request" do
+          request.perform
+          expect(body).to include("Content-Disposition: form-data")
+          expect(body).to include("hello\nworld")
         end
       end
     end
