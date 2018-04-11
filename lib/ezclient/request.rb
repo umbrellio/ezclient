@@ -116,7 +116,8 @@ class EzClient::Request
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield
-  rescue HTTP::ConnectionError => error
+  rescue HTTP::ConnectionError, IOError, SocketError, SystemCallError => error
+    # TODO: remove IOError, SocketError, SystemCallError after we drop HTTP v3 support
     on_retry.call(self, error, options[:metadata])
     yield
   end
