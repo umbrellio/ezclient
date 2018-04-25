@@ -48,7 +48,6 @@ class EzClient::Request
   end
 
   def body
-    http_request.body.source.rewind if http_request.body.source.respond_to?(:rewind)
     body = +""
     http_request.body.each { |chunk| body << chunk }
     body

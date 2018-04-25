@@ -10,7 +10,7 @@ rvm:
 
 gemfile:
   - gemfiles/http3.gemfile
-  - gemfiles/http4.gemfile
+  - Gemfile
 
 before_install: gem install bundler
 
