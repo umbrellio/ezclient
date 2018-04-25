@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "http"
-require "ezclient/http_patch"
 require "ezclient/version"
 require "ezclient/client"
 require "ezclient/request"
