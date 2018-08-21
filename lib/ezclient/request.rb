@@ -57,6 +57,10 @@ class EzClient::Request
     http_request.headers.to_h
   end
 
+  def add_headers!(new_headers)
+    http_request.headers.merge!(new_headers)
+  end
+
   def http_options
     @http_options ||= http_client.default_options.merge(ssl_context: options[:ssl_context])
   end

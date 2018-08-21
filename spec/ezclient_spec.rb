@@ -90,6 +90,18 @@ RSpec.describe EzClient do
           )
         end
       end
+
+      context "when add_headers! is used" do
+        it "adds those headers" do
+          request.add_headers!(new: "headers")
+          request.perform
+
+          expect(webmock_requests.last.headers).to include(
+            "Some-Header" => "1",
+            "New" => "headers",
+          )
+        end
+      end
     end
 
     context "when query request option is provided" do
