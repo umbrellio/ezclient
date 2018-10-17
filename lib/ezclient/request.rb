@@ -119,8 +119,7 @@ class EzClient::Request
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield
-  rescue HTTP::ConnectionError, IOError, SocketError, SystemCallError => error
-    # TODO: remove IOError, SocketError, SystemCallError after we drop HTTP v3 support
+  rescue HTTP::ConnectionError => error
     on_retry.call(self, error, options[:metadata])
     yield
   end
@@ -172,17 +171,7 @@ class EzClient::Request
   end
 
   def set_timeout(client)
-    return client unless timeout
-
-    timeout_args =
-      # for HTTP v3
-      if HTTP::Timeout::Global.ancestors.include?(HTTP::Timeout::PerOperation)
-        [:global, read: timeout, write: 0, connect: 0]
-      else
-        [timeout]
-      end
-
-    client.timeout(*timeout_args)
+    timeout ? client.timeout(timeout) : client
   end
 
   def basic_auth

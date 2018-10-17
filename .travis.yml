@@ -8,10 +8,6 @@ rvm:
   - 2.5
   - ruby-head
 
-gemfile:
-  - gemfiles/http3.gemfile
-  - Gemfile
-
 before_install: gem install bundler
 
 env: SUITE="rspec"

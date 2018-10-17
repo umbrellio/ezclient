@@ -299,17 +299,9 @@ RSpec.describe EzClient do
     let(:timeout) { 10.0 }
     let(:opts) { request.http_options }
 
-    let(:expected_timeout_options) do
-      if HTTP::VERSION.to_i < 4
-        { read_timeout: timeout, write_timeout: 0, connect_timeout: 0 }
-      else
-        { global_timeout: timeout }
-      end
-    end
-
     it "uses it for request" do
       expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-      expect(opts.timeout_options).to eq(expected_timeout_options)
+      expect(opts.timeout_options).to eq(global_timeout: timeout)
     end
 
     context "when timeout request option is provided as well" do
@@ -318,7 +310,7 @@ RSpec.describe EzClient do
 
       it "uses request option for request" do
         expect(opts.timeout_class).to eq(HTTP::Timeout::Global)
-        expect(opts.timeout_options).to eq(expected_timeout_options)
+        expect(opts.timeout_options).to eq(global_timeout: timeout)
       end
     end
   end
