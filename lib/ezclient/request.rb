@@ -47,6 +47,10 @@ class EzClient::Request
     self
   end
 
+  def uri
+    http_request.uri
+  end
+
   def body
     body = +""
     http_request.body.each { |chunk| body << chunk }
