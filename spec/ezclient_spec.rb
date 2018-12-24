@@ -153,6 +153,7 @@ RSpec.describe EzClient do
           request.perform
           expect(webmock_requests.last.uri.query).to eq("a=1")
           expect(webmock_requests.last.body).to eq("")
+          expect(request.uri.to_s).to eq("http://example.com/?a=1")
         end
       end
 
