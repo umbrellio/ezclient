@@ -1,7 +1,9 @@
 # EzClient   [![Gem Version](https://badge.fury.io/rb/ezclient.svg)](https://badge.fury.io/rb/ezclient) [![Build Status](https://travis-ci.org/umbrellio/ezclient.svg?branch=master)](https://travis-ci.org/umbrellio/ezclient) [![Coverage Status](https://coveralls.io/repos/github/umbrellio/ezclient/badge.svg?branch=master)](https://coveralls.io/github/umbrellio/ezclient?branch=master)
+
 EzClient is [HTTP gem](https://github.com/httprb/http) wrapper for easy persistent connections and more.
 
 ## Installation
+
 Add this line to your application's Gemfile:
 
 ```ruby
@@ -9,6 +11,7 @@ gem "ezclient"
 ```
 
 ## Usage
+
 ```ruby
 url = "http://example.com"
 
@@ -29,6 +32,7 @@ response = client.perform!(:get, url, request_options) # => EzClient::Response o
 ```
 
 Valid client options are:
+
 - `api_auth` – arguments for `ApiAuth.sign!` (see https://github.com/mgomes/api_auth)
 - `basic_auth` – arguments for basic authentication (either a hash with `:user` and `:pass` keys or a two-element array)
 - `headers` – a hash of headers for requests
@@ -44,6 +48,7 @@ Valid client options are:
 All these options are passed to each request made by this client but can be overriden on per-request basis.
 
 Extra per-request only options are:
+
 - `body` – raw request body
 - `form` – hash for urlencoded body
 - `json` – data for json (also adds `application/json` content-type header)
@@ -52,6 +57,7 @@ Extra per-request only options are:
 - `query` – hash for uri query
 
 ## Persistent connections
+
 If you provide `keep_alive` option to the client or particular request, the connection will be stored in the client and then
 reused for all following requests to the same origin within specified amount of time.
 
@@ -60,6 +66,7 @@ automatically retry the request on any `HTTP::ConnectionError` exception in this
 received by a server (see https://github.com/httprb/http/issues/459).
 
 ## Callbacks and retrying
+
 You can provide `on_complete`, `on_error` and `on_retry` callbacks like this:
 
 ```ruby
@@ -79,12 +86,14 @@ response = client.perform!(:get, url, metadata: :hello)
 ```
 
 The arguments passed into callbacks are:
+
 - `request` – an `EzClient::Request` instance
 - `response` – an `EzClient::Response` instance
 - `error` – an exception instance
 - `metadata` - the `metadata` option passed into a request
 
 ## Request object
+
 ```ruby
 request = client.request(:post, "http://example.com", json: { a: 1 }, timeout: 15)
 
@@ -95,6 +104,7 @@ request.headers # => { "Content-Type" => "application/json; charset=UTF-8", ... 
 ```
 
 ## Response object
+
 ```ruby
 response = request.perform(...)
 
@@ -110,12 +120,15 @@ response.error? # Returns if request was 4xx or 5xx status
 ```
 
 ## Contributing
+
 Bug reports and pull requests are welcome on GitHub at https://github.com/umbrellio/ezclient.
 
 ## License
+
 Released under MIT License.
 
 ## Authors
+
 Created by Yuri Smirnov.
 
 <a href="https://github.com/umbrellio/">
