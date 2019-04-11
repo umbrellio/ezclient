@@ -18,7 +18,6 @@ class EzClient::Client
 
   def initialize(options = {})
     self.request_options = options
-    self.clients = {}
     EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
   end
 
@@ -49,10 +48,11 @@ class EzClient::Client
 
   private
 
-  attr_accessor :request_options, :clients
+  attr_accessor :request_options
 
   def persistent_client_for(url, timeout: 600)
     uri = HTTP::URI.parse(url)
-    clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
+    persistent_clients = (Thread.current[:"__ezclient_persistent_clients_#{object_id}"] ||= {})
+    persistent_clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
   end
 end
