@@ -52,7 +52,8 @@ class EzClient::Client
 
   def persistent_client_for(url, timeout: 600)
     uri = HTTP::URI.parse(url)
-    persistent_clients = (Thread.current[:"__ezclient_persistent_clients_#{object_id}"] ||= {})
-    persistent_clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
+    key = [uri.origin, Thread.current.object_id]
+    @persistent_clients ||= {}
+    @persistent_clients[key] ||= HTTP.persistent(uri.origin, timeout: timeout)
   end
 end
