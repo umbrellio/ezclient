@@ -65,6 +65,9 @@ Note that, as of now, EzClient will
 automatically retry the request on any `HTTP::ConnectionError` exception in this case which may possibly result in two requests
 received by a server (see https://github.com/httprb/http/issues/459).
 
+Also please keep in mind that EzClient keeps data in current Thread for each instance of itself if you are using persistent
+connections, so you should avoid creating lots of persistent clients, ideally you should have just one such client per process.
+
 ## Callbacks and retrying
 
 You can provide `on_complete`, `on_error` and `on_retry` callbacks like this:
