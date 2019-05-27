@@ -61,7 +61,23 @@ Extra per-request only options are:
 If you provide `keep_alive` option to the client or particular request, the connection will be stored in the client and then
 reused for all following requests to the same origin within specified amount of time.
 
-Note that, as of now, EzClient will
+Note that if you are using persistent connections, you shouldn't store your client in a variable that is accessable by different threads. See the example:
+
+```ruby
+module MyApp
+  # Bad: multiple threads will use the same socket
+  def self.bad_client
+    @ezclient ||= EzClient.new(keep_alive: 100)
+  end
+
+  # Good: each thread has it's own socket
+  def self.good_client
+    Thread.current[:ezclient] ||= EzClient.new(keep_alive: 100)
+  end
+end
+```
+
+Alose note that, as of now, EzClient will
 automatically retry the request on any `HTTP::ConnectionError` exception in this case which may possibly result in two requests
 received by a server (see https://github.com/httprb/http/issues/459).
 
