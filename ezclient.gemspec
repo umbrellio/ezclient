@@ -5,7 +5,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "ezclient/version"
 
 Gem::Specification.new do |spec|
-  spec.required_ruby_version = '>= 2.3.8'
+  spec.required_ruby_version = ">= 2.3.8"
 
   spec.name    = "ezclient"
   spec.version = EzClient::VERSION

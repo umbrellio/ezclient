@@ -4,6 +4,14 @@ inherit_gem:
 AllCops:
   DisplayCopNames: true
   TargetRubyVersion: 2.3
+  Include:
+    - bin/console
+    - Gemfile
+    - ezclient.gemspec
+    - Rakefile
+    - lib/**/*
+    - spec/**/*
+    - gemfile/**/*
   Exclude:
     - vendor/**/*
     - gemfiles/**/*
