@@ -5,16 +5,18 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "ezclient/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "ezclient"
-  spec.version       = EzClient::VERSION
-  spec.authors       = ["Yuri Smirnov"]
-  spec.email         = ["tycooon@yandex.ru"]
+  spec.required_ruby_version = ">= 2.3.8"
 
-  spec.summary       = "An HTTP gem wrapper for easy persistent connections and more."
-  spec.homepage      = "https://github.com/umbrellio/ezclient"
-  spec.license       = "MIT"
+  spec.name    = "ezclient"
+  spec.version = EzClient::VERSION
+  spec.authors = ["Yuri Smirnov"]
+  spec.email   = ["tycooon@yandex.ru", "oss@umbrellio.biz"]
 
-  spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
+  spec.summary  = "An HTTP gem wrapper for easy persistent connections and more."
+  spec.homepage = "https://github.com/umbrellio/ezclient"
+  spec.license  = "MIT"
+
+  spec.files = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "http", ">= 4"
