@@ -14,6 +14,7 @@ class EzClient::Client
     retry_exceptions
     ssl_context
     timeout
+    follow
   ].freeze
 
   def initialize(options = {})
