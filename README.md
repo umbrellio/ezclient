@@ -44,6 +44,7 @@ Valid client options are:
 - `retry_exceptions` – an array of exception classes to retry
 - `ssl_context` – ssl context for requests (an `OpenSSL::SSL::SSLContext` instance)
 - `timeout` – timeout for requests in seconds
+- `follow` - enable following redirects (`true` or hash with options – e.g. `{ max_hops: 1, strict: false}`)
 
 All these options are passed to each request made by this client but can be overriden on per-request basis.
 

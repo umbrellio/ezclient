@@ -101,13 +101,23 @@ class EzClient::Request
   end
 
   def perform_request
+    with_retry do
+      # Use original client so that connection can be reused
+      # client.perform(http_request, http_options)
+      res = client.perform(http_request, http_options)
+      return res unless follow
+
+      HTTP::Redirector.new(follow).perform(http_request, res) do |request|
+        client.perform(request, http_options)
+      end
+    end
+  end
+
+  def with_retry(&block)
     retries = 0
 
     begin
-      retry_on_connection_error do
-        # Use original client so that connection can be reused
-        client.perform(http_request, http_options)
-      end
+      retry_on_connection_error(&block)
     rescue *retried_exceptions => error
       if retries < max_retries.to_i
         retries += 1
@@ -150,6 +160,11 @@ class EzClient::Request
 
   def max_retries
     options[:max_retries] || 1
+  end
+
+  def follow
+    return unless options[:follow]
+    options[:follow].is_a?(Hash) ? options[:follow] : {}
   end
 
   def prepare_headers(headers)

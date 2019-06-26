@@ -324,9 +324,10 @@ RSpec.describe EzClient do
         expect(request).to be_a(HTTP::Request)
         expect(access_id).to eq("id")
         expect(access_key).to eq("secret")
+        request.headers.merge!("Authorization" => "some-hash-here")
       end
 
-      request
+      expect(request.headers).to include("Authorization" => "some-hash-here")
     end
   end
 
@@ -365,7 +366,8 @@ RSpec.describe EzClient do
     end
 
     context "302 response code" do
-      let(:webmock_response) { Hash[status: 302] }
+      let(:webmock_response) { Hash[status: 302, headers: response_headers] }
+      let(:response_headers) { Hash[] }
 
       specify do
         expect(response.code).to eq(302)
@@ -375,6 +377,22 @@ RSpec.describe EzClient do
         expect(response.redirect?).to eq(true)
         expect(response.client_error?).to eq(false)
         expect(response.server_error?).to eq(false)
+      end
+
+      context "when follow param presents" do
+        let(:request_options) { Hash[follow: true] }
+        let(:verb) { :get }
+        let(:response_headers) { Hash["Location" => "http://redirect.me"] }
+
+        before do
+          stub_request(:get, /redirect\.me/)
+            .with { |request| webmock_requests << request }
+        end
+
+        it "follows the redirect" do
+          request.perform
+          expect(webmock_requests.size).to eq(2)
+        end
       end
     end
 
