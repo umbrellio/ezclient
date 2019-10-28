@@ -141,7 +141,7 @@ class EzClient::Request
   def timeout
     case options[:timeout]
     when Hash
-      options[:timeout]&.map { |option, value| [option, value&.to_f] }&.to_h
+      options[:timeout].transform_values! { |value| value&.to_f }
     else
       options[:timeout]&.to_f
     end
