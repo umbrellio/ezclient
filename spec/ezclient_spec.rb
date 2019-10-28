@@ -310,7 +310,7 @@ RSpec.describe EzClient do
 
     context "when timeout like hash" do
       let(:client_options) { Hash[timeout: Hash[read: 5, write: 5, connect: 1]] }
-      let(:expected_configs) { { write_timeout: 5.0, read_timeout: 5.0, connect_timeout: 1.0, } }
+      let(:expected_configs) { { write_timeout: 5.0, read_timeout: 5.0, connect_timeout: 1.0 } }
 
       it "uses request option for request" do
         expect(opts.timeout_class).to eq(HTTP::Timeout::PerOperation)
