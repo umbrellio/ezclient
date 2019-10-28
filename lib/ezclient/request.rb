@@ -141,10 +141,7 @@ class EzClient::Request
   def timeout
     case options[:timeout]
     when Hash
-      options[:timeout]&.inject({}) do |new_options, (option, value)|
-        new_options[option] = value&.to_f
-        new_options
-      end
+      options[:timeout]&.map { |option, value| [option, value&.to_f] }&.to_h
     else
       options[:timeout]&.to_f
     end
