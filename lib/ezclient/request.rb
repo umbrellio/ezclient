@@ -139,7 +139,12 @@ class EzClient::Request
   end
 
   def timeout
-    options[:timeout]&.to_f
+    case options[:timeout]
+    when Hash
+      return options[:timeout]&.transform_values! { |value| value&.to_f }
+    else
+      return options[:timeout]&.to_f
+    end
   end
 
   def on_complete
