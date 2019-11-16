@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "http", ">= 4"
+  spec.add_runtime_dependency "sorbet-runtime"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "coveralls"

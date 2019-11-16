@@ -3,6 +3,8 @@
 # typed: strong
 
 require "http"
+require "sorbet-runtime"
+
 require "ezclient/version"
 require "ezclient/client"
 require "ezclient/request"
