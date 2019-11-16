@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "simplecov"
@@ -11,6 +12,7 @@ SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
 SimpleCov.start { add_filter "spec" }
 
 require "bundler/setup"
+require "sorbet-runtime"
 require "webmock/rspec"
 require "ezclient"
 

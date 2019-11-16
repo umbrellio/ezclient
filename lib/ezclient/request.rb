@@ -1,22 +1,27 @@
 # frozen_string_literal: true
+# typed: strict
 
 class EzClient::Request
-  OPTION_KEYS = %i[
+  OPTION_KEYS = T.let(%i[
     body
     form
     json
     metadata
     params
     query
-  ].freeze
+  ].freeze, T::Array[Symbol])
 
-  attr_accessor :verb, :url, :options
+  attr_reader :verb, :url, :options
 
   def initialize(verb, url, options)
-    self.verb = verb.to_s.upcase
-    self.url = url
-    self.client = options.delete(:client)
-    self.options = options
+    @verb = T.let(verb.to_s.upcase, String)
+    @url = T.let(url, String)
+    @client = T.let(options.delete(:client), HTTP::Client)
+    @options = T.let(options, T::Hash[Symbol, T.untyped])
+    @http_request = T.let(nil, T.nilable(HTTP::Request))
+    @http_client = T.let(nil, T.nilable(HTTP::Client))
+    @http_options = T.let(nil, T.untyped)
+    @basic_auth = T.let(nil, T.untyped)
     EzClient::CheckOptions.call(options, OPTION_KEYS + EzClient::Client::REQUEST_OPTION_KEYS)
   end
 
@@ -35,7 +40,7 @@ class EzClient::Request
     response = perform
 
     if response.error?
-      raise EzClient::ResponseStatusError, response
+      raise EzClient::ResponseStatusError.new(response)
     else
       response
     end
@@ -43,7 +48,7 @@ class EzClient::Request
 
   def api_auth!(*args)
     raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
-    ApiAuth.sign!(http_request, *args)
+    T.unsafe(ApiAuth).sign!(http_request, *args)
     self
   end
 
@@ -71,7 +76,7 @@ class EzClient::Request
 
   private
 
-  attr_accessor :client
+  attr_reader :client
 
   def http_request
     @http_request ||= begin
@@ -90,8 +95,8 @@ class EzClient::Request
   end
 
   def http_client
-    # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
+      # Only used to build proper HTTP::Request and HTTP::Options instances
       http_client = client.dup
       http_client = set_timeout(http_client)
       http_client = http_client.basic_auth(basic_auth) if basic_auth
@@ -129,7 +134,7 @@ class EzClient::Request
     end
   end
 
-  def retry_on_connection_error
+  def retry_on_connection_error(&block)
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield

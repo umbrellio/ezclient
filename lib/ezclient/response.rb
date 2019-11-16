@@ -1,11 +1,14 @@
 # frozen_string_literal: true
+# typed: strict
 
 class EzClient::Response
-  attr_accessor :http_response, :body
+  attr_reader :http_response, :body
 
   def initialize(http_response)
-    self.http_response = http_response
-    self.body = http_response.body.to_s # Make sure we read the body for persistent connection
+    @http_response = T.let(http_response, HTTP::Response)
+
+    # Make sure we read the body for persistent connection
+    @body = T.let(http_response.body.to_s, String)
   end
 
   def headers

@@ -1,11 +1,12 @@
 # frozen_string_literal: true
+# typed: strict
 
 module EzClient
   class ResponseStatusError < StandardError
-    attr_accessor :response
+    attr_reader :response
 
     def initialize(response)
-      self.response = response
+      @response = T.let(response, EzClient::Response)
     end
 
     def message

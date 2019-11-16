@@ -1,7 +1,8 @@
 # frozen_string_literal: true
+# typed: strict
 
 class EzClient::Client
-  REQUEST_OPTION_KEYS = %i[
+  REQUEST_OPTION_KEYS = T.let(%i[
     api_auth
     basic_auth
     cookies
@@ -15,16 +16,16 @@ class EzClient::Client
     ssl_context
     timeout
     follow
-  ].freeze
+  ].freeze, T::Array[Symbol])
 
   def initialize(options = {})
-    self.request_options = options
-    self.clients = {}
+    @request_options = T.let(options, T::Hash[Symbol, T.untyped])
+    @clients = T.let({}, T::Hash[Symbol, T.untyped])
     EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
   end
 
-  def request(verb, url, **options)
-    options = { **request_options, **options }
+  def request(verb, url, options = {})
+    options = { **@request_options, **options }
 
     keep_alive_timeout = options.delete(:keep_alive)
     api_auth = options.delete(:api_auth)
@@ -40,20 +41,18 @@ class EzClient::Client
     end
   end
 
-  def perform(*args)
-    request(*args).perform
+  def perform(verb, url, options = {})
+    request(verb, url, options).perform
   end
 
-  def perform!(*args)
-    request(*args).perform!
+  def perform!(verb, url, options = {})
+    request(verb, url, options).perform!
   end
 
   private
 
-  attr_accessor :request_options, :clients
-
   def persistent_client_for(url, timeout: 600)
     uri = HTTP::URI.parse(url)
-    clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
+    @clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
   end
 end

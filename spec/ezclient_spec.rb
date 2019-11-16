@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 module ApiAuth
@@ -216,8 +217,9 @@ RSpec.describe EzClient do
         let(:perform_args) { [verb, "http://example.com", **request_options] }
 
         it "raises error" do
-          expect { client.perform!(*perform_args) }.to raise_exception do |exception|
-            expect(exception).to be_a(EzClient::ResponseStatusError)
+          block = proc { client.perform!(*perform_args) }
+
+          expect(block).to raise_exception(EzClient::ResponseStatusError) do |exception|
             expect(exception.response).to be_a(EzClient::Response)
             expect(exception.response.body).to eq("Not Found")
             expect(exception.response.code).to eq(404)
