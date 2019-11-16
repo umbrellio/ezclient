@@ -74,10 +74,10 @@ class EzClient::Request
   def perform_request; end
 
   sig { returns(T.untyped) }
-  def with_retry(&block); end
+  def with_retry; end
 
   sig { void }
-  def retry_on_connection_error(&block); end
+  def retry_on_connection_error; end
 
   sig { returns(T.nilable(Float)) }
   def timeout; end

@@ -10,6 +10,11 @@ rvm:
 
 before_install: gem install bundler
 
+script:
+  - bundle exec srb tc
+  - bundle exec rake lint
+  - bundle exec rake spec
+
 matrix:
   fast_finish: true
   allow_failures:

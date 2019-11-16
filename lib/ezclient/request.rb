@@ -132,7 +132,7 @@ class EzClient::Request
     end
   end
 
-  def retry_on_connection_error(&block)
+  def retry_on_connection_error(&_block)
     # This may result in 2 requests reaching the server so I hope HTTP fixes it
     # https://github.com/httprb/http/issues/459
     yield
