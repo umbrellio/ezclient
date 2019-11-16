@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-# typed: strict
+
+# typed: strong
 
 module EzClient::CheckOptions
   def self.call(options, allowed_keys)

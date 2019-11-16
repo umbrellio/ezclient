@@ -76,7 +76,7 @@ class EzClient::Request
   sig { returns(T.untyped) }
   def with_retry(&block); end
 
-  sig { params(block: T.proc.void).void }
+  sig { void }
   def retry_on_connection_error(&block); end
 
   sig { returns(T.nilable(Float)) }

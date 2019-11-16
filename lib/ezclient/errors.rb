@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-# typed: strict
+
+# typed: strong
 
 module EzClient
   class ResponseStatusError < StandardError

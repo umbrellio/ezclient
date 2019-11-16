@@ -1,5 +1,6 @@
-# typed: false
 # frozen_string_literal: true
+
+# typed: false
 
 module ApiAuth
   def self.sign!(*); end

@@ -3399,7 +3399,7 @@
 # wrong constant name <static-init>
 # wrong constant name worse_than?
 # wrong constant name +
-# uninitialized constant #<Class:0x00007f91bd813610>::Elem
+# uninitialized constant #<Class:0x00007fc52a4380b8>::Elem
 # wrong constant name candidate?
 # wrong constant name ideal?
 # wrong constant name indeterminate_actual_indexes

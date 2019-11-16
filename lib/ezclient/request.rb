@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # typed: strict
 
 class EzClient::Request
@@ -76,8 +77,6 @@ class EzClient::Request
 
   private
 
-  attr_reader :client
-
   def http_request
     @http_request ||= begin
       opts = {}
@@ -95,9 +94,9 @@ class EzClient::Request
   end
 
   def http_client
+    # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
-      # Only used to build proper HTTP::Request and HTTP::Options instances
-      http_client = client.dup
+      http_client = @client.dup
       http_client = set_timeout(http_client)
       http_client = http_client.basic_auth(basic_auth) if basic_auth
       http_client = http_client.cookies(options[:cookies]) if options[:cookies]
@@ -108,12 +107,11 @@ class EzClient::Request
   def perform_request
     with_retry do
       # Use original client so that connection can be reused
-      # client.perform(http_request, http_options)
-      res = client.perform(http_request, http_options)
+      res = @client.perform(http_request, http_options)
       return res unless follow
 
       HTTP::Redirector.new(follow).perform(http_request, res) do |request|
-        client.perform(request, http_options)
+        @client.perform(request, http_options)
       end
     end
   end
@@ -200,7 +198,7 @@ class EzClient::Request
   end
 
   def set_timeout(client)
-    timeout ? client.timeout(timeout) : client
+    timeout ? @client.timeout(timeout) : client
   end
 
   def basic_auth

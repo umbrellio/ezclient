@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-# typed: strict
+
+# typed: strong
 
 require "http"
 require "ezclient/version"
