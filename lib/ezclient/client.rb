@@ -19,7 +19,6 @@ class EzClient::Client
 
   def initialize(options = {})
     self.request_options = options
-    self.clients = {}
     EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
   end
 
@@ -50,7 +49,7 @@ class EzClient::Client
 
   private
 
-  attr_accessor :request_options, :clients
+  attr_accessor :request_options
 
   def persistent_client_registry
     @persistent_client_registry ||= EzClient::PersistentClientRegistry.new

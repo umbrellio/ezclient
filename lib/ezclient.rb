@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
 require "http"
-require "ezclient/version"
-require "ezclient/client"
-require "ezclient/persistent_client"
-require "ezclient/persistent_client_registry"
-require "ezclient/request"
-require "ezclient/response"
-require "ezclient/errors"
-require "ezclient/check_options"
+
+require_relative "ezclient/version"
+require_relative "ezclient/client"
+require_relative "ezclient/persistent_client"
+require_relative "ezclient/persistent_client_registry"
+require_relative "ezclient/request"
+require_relative "ezclient/response"
+require_relative "ezclient/errors"
+require_relative "ezclient/check_options"
 
 module EzClient
   def self.new(*args)
