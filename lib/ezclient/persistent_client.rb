@@ -3,18 +3,27 @@
 class EzClient::PersistentClient
   extend Forwardable
 
-  def initialize(origin, timeout)
+  def_delegators :http_client, :build_request, :default_options, :timeout
+
+  attr_accessor :origin, :keep_alive_timeout
+
+  def initialize(origin, keep_alive_timeout)
     self.origin = origin
-    self.timeout = timeout
+    self.keep_alive_timeout = keep_alive_timeout
+    self.last_request_at = nil
   end
 
-  def_delegators :http_client, :build_request, :default_options, :perform
+  def perform(*args, **kwargs)
+    http_client.perform(*args, **kwargs).tap do |response|
+      self.last_request_at = EzClient.get_time
+    end
+  end
 
   private
 
-  attr_accessor :origin, :timeout
+  attr_accessor :last_request_at
 
   def http_client
-    @http_client ||= HTTP.persistent(origin, timeout: timeout)
+    @http_client ||= HTTP.persistent(origin, timeout: keep_alive_timeout)
   end
 end

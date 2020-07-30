@@ -229,11 +229,13 @@ RSpec.describe EzClient do
       end
     end
 
+    # TODO: run all specs with keep_alive?
     context "when keep_alive client option is provided" do
-      let(:client_options) { Hash[keep_alive: 10] }
+      let(:client_options) { Hash[keep_alive: 10, timeout: 25] }
 
       it "sends proper Connection header" do
         expect(request.headers).to include("Connection" => "Keep-Alive")
+        expect(request.url).to eq("http://example.com")
         response = request.perform!
         expect(response.body).to eq("some body")
       end

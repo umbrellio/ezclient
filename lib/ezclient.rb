@@ -14,4 +14,8 @@ module EzClient
   def self.new(*args)
     Client.new(*args)
   end
+
+  def self.get_time
+    Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  end
 end

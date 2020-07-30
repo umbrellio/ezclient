@@ -16,6 +16,8 @@ class EzClient::PersistentClientRegistry
   attr_accessor :registry
 
   def cleanup_registry!
-    # TODO
+    registry.delete_if do |_key, value|
+      EzClient.get_time - value.last_request_at >= value.keep_alive_timeout
+    end
   end
 end

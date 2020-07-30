@@ -103,11 +103,11 @@ class EzClient::Request
   def perform_request
     with_retry do
       # Use original client so that connection can be reused
-      res = client.perform(http_request, http_options)
+      res = client.perform(http_request, **http_options)
       return res unless follow
 
       HTTP::Redirector.new(follow).perform(http_request, res) do |request|
-        client.perform(request, http_options)
+        client.perform(request, **http_options)
       end
     end
   end
