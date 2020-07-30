@@ -30,7 +30,7 @@ class EzClient::Client
     api_auth = options.delete(:api_auth)
 
     if keep_alive_timeout
-      client = persistent_client_for(url, timeout: keep_alive_timeout)
+      client = persistent_client_registry.for(url, timeout: keep_alive_timeout)
     else
       client = HTTP::Client.new
     end
@@ -40,20 +40,19 @@ class EzClient::Client
     end
   end
 
-  def perform(*args)
-    request(*args).perform
+  def perform(*args, **kwargs)
+    request(*args, **kwargs).perform
   end
 
-  def perform!(*args)
-    request(*args).perform!
+  def perform!(*args, **kwargs)
+    request(*args, **kwargs).perform!
   end
 
   private
 
   attr_accessor :request_options, :clients
 
-  def persistent_client_for(url, timeout: 600)
-    uri = HTTP::URI.parse(url)
-    clients[uri.origin] ||= HTTP.persistent(uri.origin, timeout: timeout)
+  def persistent_client_registry
+    @persistent_client_registry ||= EzClient::PersistentClientRegistry.new
   end
 end

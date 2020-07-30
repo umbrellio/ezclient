@@ -3,6 +3,8 @@
 require "http"
 require "ezclient/version"
 require "ezclient/client"
+require "ezclient/persistent_client"
+require "ezclient/persistent_client_registry"
 require "ezclient/request"
 require "ezclient/response"
 require "ezclient/errors"
