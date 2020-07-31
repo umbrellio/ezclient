@@ -235,6 +235,7 @@ RSpec.describe EzClient do
       it "sends proper Connection header" do
         expect(request.headers).to include("Connection" => "Keep-Alive")
         expect(request.url).to eq("http://example.com")
+        client.request(:get, "http://example2.com")
         response = request.perform!
         expect(response.body).to eq("some body")
       end

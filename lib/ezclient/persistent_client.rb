@@ -5,8 +5,6 @@ class EzClient::PersistentClient
 
   def_delegators :http_client, :build_request, :default_options, :timeout
 
-  attr_accessor :origin, :keep_alive_timeout, :last_request_at
-
   def initialize(origin, keep_alive_timeout)
     self.origin = origin
     self.keep_alive_timeout = keep_alive_timeout
@@ -19,7 +17,13 @@ class EzClient::PersistentClient
     end
   end
 
+  def timed_out?
+    last_request_at && EzClient.get_time - last_request_at >= keep_alive_timeout
+  end
+
   private
+
+  attr_accessor :origin, :keep_alive_timeout, :last_request_at
 
   def http_client
     @http_client ||= HTTP.persistent(origin, timeout: keep_alive_timeout)
