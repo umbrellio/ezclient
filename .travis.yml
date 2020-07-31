@@ -1,16 +1,17 @@
 language: ruby
 
-sudo: false
+os: linux
 
-rvm:
-  - 2.4
-  - 2.5
-  - 2.6
-  - ruby-head
+dist: xenial
 
 before_install: gem install bundler
 
-matrix:
+jobs:
   fast_finish: true
+  include:
+  - rvm: 2.5
+  - rvm: 2.6
+  - rvm: 2.7
+  - rvm: ruby-head
   allow_failures:
-    - rvm: ruby-head
+  - rvm: ruby-head

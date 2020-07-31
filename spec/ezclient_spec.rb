@@ -213,10 +213,12 @@ RSpec.describe EzClient do
       end
 
       context "when calling perform! on client" do
-        let(:perform_args) { [verb, "http://example.com", **request_options] }
+        let(:perform_proc) do
+          -> { client.perform!(verb, "http://example.com", **request_options) }
+        end
 
         it "raises error" do
-          expect { client.perform!(*perform_args) }.to raise_exception do |exception|
+          expect(perform_proc).to raise_exception do |exception|
             expect(exception).to be_a(EzClient::ResponseStatusError)
             expect(exception.response).to be_a(EzClient::Response)
             expect(exception.response.body).to eq("Not Found")
@@ -224,6 +226,17 @@ RSpec.describe EzClient do
             expect(exception.message).to eq("Bad response code: 404")
           end
         end
+      end
+    end
+
+    context "when keep_alive client option is provided" do
+      let(:client_options) { Hash[keep_alive: 10, timeout: 25] }
+
+      it "sends proper Connection header" do
+        expect(request.headers).to include("Connection" => "Keep-Alive")
+        expect(request.url).to eq("http://example.com")
+        response = request.perform!
+        expect(response.body).to eq("some body")
       end
     end
   end
@@ -284,14 +297,6 @@ RSpec.describe EzClient do
         expect(calls.size).to eq(1)
         expect(response.body).to eq("success")
       end
-    end
-  end
-
-  context "when keep_alive client option is provided" do
-    let(:client_options) { Hash[keep_alive: 10] }
-
-    it "sends proper Connection header" do
-      expect(request.headers).to include("Connection" => "Keep-Alive")
     end
   end
 
