@@ -8,7 +8,8 @@ SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
   Coveralls::SimpleCov::Formatter,
 ])
 
-SimpleCov.start { add_filter "spec" }
+SimpleCov.minimum_coverage(100)
+SimpleCov.start
 
 require "bundler/setup"
 require "webmock/rspec"
