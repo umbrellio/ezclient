@@ -35,6 +35,7 @@ Valid client options are:
 
 - `api_auth` – arguments for `ApiAuth.sign!` (see https://github.com/mgomes/api_auth)
 - `basic_auth` – arguments for basic authentication (either a hash with `:user` and `:pass` keys or a two-element array)
+- `cookies` – a hash of cookies (or `HTTP::CookieJar` object) for requests
 - `headers` – a hash of headers for requests
 - `keep_alive` – timeout for persistent connection in seconds
 - `max_retries` – maximum number of retries in case `retry_exceptions` option is provided
@@ -44,7 +45,7 @@ Valid client options are:
 - `retry_exceptions` – an array of exception classes to retry
 - `ssl_context` – ssl context for requests (an `OpenSSL::SSL::SSLContext` instance)
 - `timeout` – timeout for requests in seconds or hash like `{ read: 5, write: 5, connect: 1 }`
-- `follow` - enable following redirects (`true` or hash with options – e.g. `{ max_hops: 1, strict: false}`)
+- `follow` – enable following redirects (`true` or hash with options – e.g. `{ max_hops: 1, strict: false}`)
 
 All these options are passed to each request made by this client but can be overriden on per-request basis.
 
