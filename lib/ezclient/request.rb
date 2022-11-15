@@ -29,6 +29,7 @@ class EzClient::Request
       on_complete.call(self, response, options[:metadata])
     end
   rescue => error
+    self.elapsed_seconds = EzClient.get_time - perform_started_at
     on_error.call(self, error, options[:metadata])
     raise error
   end
