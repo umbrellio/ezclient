@@ -10,7 +10,7 @@ class EzClient::Request
     query
   ].freeze
 
-  attr_accessor :verb, :url, :options
+  attr_accessor :verb, :url, :options, :elapsed_seconds
 
   def initialize(verb, url, options)
     self.verb = verb.to_s.upcase
@@ -101,6 +101,7 @@ class EzClient::Request
   end
 
   def perform_request
+    perform_started_at = EzClient.get_time
     with_retry do
       # Use original client so that connection can be reused
       res = client.perform(http_request, http_options)
@@ -110,6 +111,8 @@ class EzClient::Request
         client.perform(request, http_options)
       end
     end
+  ensure
+    self.elapsed_seconds = EzClient.get_time - perform_started_at
   end
 
   def with_retry(&block)

@@ -119,6 +119,7 @@ request.verb # => "POST"
 request.url # => "http://example.com"
 request.body # => '{"a": 1}'
 request.headers # => { "Content-Type" => "application/json; charset=UTF-8", ... }
+request.elapsed_seconds # => 0.08117745001072763
 ```
 
 ## Response object

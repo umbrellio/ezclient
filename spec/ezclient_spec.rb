@@ -34,6 +34,7 @@ RSpec.describe EzClient do
       expect(request.verb).to eq("POST")
       expect(request.url).to eq("http://example.com")
       expect(request.body).to eq("a=1")
+      expect(request.elapsed_seconds).to be_a(Float)
 
       expect(request.headers).to eq(
         "Connection" => "close",
@@ -258,6 +259,7 @@ RSpec.describe EzClient do
       let(:on_error) do
         proc do |request, error, metadata|
           expect(request.url).to eq("http://example.com")
+          expect(request.elapsed_seconds).to be_a(Float)
           expect(error).to be_a(StandardError)
           expect(metadata).to eq(:smth)
           calls << nil
