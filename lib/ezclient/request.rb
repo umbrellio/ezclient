@@ -21,15 +21,12 @@ class EzClient::Request
   end
 
   def perform
-    perform_started_at = EzClient.get_time
     http_response = perform_request
-    self.elapsed_seconds = EzClient.get_time - perform_started_at
 
     EzClient::Response.new(http_response).tap do |response|
       on_complete.call(self, response, options[:metadata])
     end
   rescue => error
-    self.elapsed_seconds = EzClient.get_time - perform_started_at
     on_error.call(self, error, options[:metadata])
     raise error
   end
@@ -104,6 +101,7 @@ class EzClient::Request
   end
 
   def perform_request
+    perform_started_at = EzClient.get_time
     with_retry do
       # Use original client so that connection can be reused
       res = client.perform(http_request, http_options)
@@ -113,6 +111,8 @@ class EzClient::Request
         client.perform(request, http_options)
       end
     end
+  ensure
+    self.elapsed_seconds = EzClient.get_time - perform_started_at
   end
 
   def with_retry(&block)
