@@ -6,6 +6,7 @@ module EzClient
 
     def initialize(response)
       self.response = response
+      super
     end
 
     def message

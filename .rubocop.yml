@@ -1,9 +1,11 @@
+require: rubocop-rake
+
 inherit_gem:
   rubocop-config-umbrellio: lib/rubocop.yml
 
 AllCops:
   DisplayCopNames: true
-  TargetRubyVersion: 2.5
+  TargetRubyVersion: 2.7
   Include:
     - bin/console
     - Gemfile
@@ -15,3 +17,6 @@ AllCops:
   Exclude:
     - vendor/**/*
     - gemfiles/**/*
+
+RSpec/Rails/HaveHttpStatus:
+  Enabled: false

@@ -9,7 +9,7 @@ SomeError = Class.new(StandardError)
 RSpec.describe EzClient do
   subject(:client) { described_class.new(client_options) }
 
-  let(:client_options) { Hash[] }
+  let(:client_options) { {} }
   let(:webmock_requests) { [] }
 
   let!(:request_stub) do
@@ -19,14 +19,14 @@ RSpec.describe EzClient do
 
   let(:verb) { :post }
   let(:request) { client.request(verb, "http://example.com", **request_options) }
-  let(:request_options) { Hash[] }
+  let(:request_options) { {} }
 
   context "when request is completed" do
     before { request_stub.to_return(webmock_response) }
 
-    let(:webmock_response) { Hash[body: "some body", headers: response_headers] }
-    let(:request_options) { Hash[form: Hash[a: 1], metadata: :smth] }
-    let(:response_headers) { Hash[some: "header", set_cookie: "a=1"] }
+    let(:webmock_response) { { body: "some body", headers: response_headers } }
+    let(:request_options) { { form: { a: 1 }, metadata: :smth } }
+    let(:response_headers) { { some: "header", set_cookie: "a=1" } }
 
     it "makes a request and returns a response" do
       response = request.perform
@@ -52,8 +52,8 @@ RSpec.describe EzClient do
     end
 
     context "when headers request option is provided" do
-      let(:request_options) { Hash[headers: headers] }
-      let(:headers) { Hash[some_header: 1] }
+      let(:request_options) { { headers: headers } }
+      let(:headers) { { some_header: 1 } }
 
       it "makes request with proper headers" do
         request.perform
@@ -65,7 +65,7 @@ RSpec.describe EzClient do
       end
 
       context "when user agent header is provided" do
-        let(:headers) { Hash[some_header: 1, user_agent: "UA"] }
+        let(:headers) { { some_header: 1, user_agent: "UA" } }
 
         it "makes request with proper headers" do
           request.perform
@@ -78,8 +78,8 @@ RSpec.describe EzClient do
       end
 
       context "when cookies request option is provided" do
-        let(:request_options) { Hash[headers: headers, cookies: cookies] }
-        let(:cookies) { Hash[a: 1] }
+        let(:request_options) { { headers: headers, cookies: cookies } }
+        let(:cookies) { { a: 1 } }
 
         it "makes request with proper headers" do
           request.perform
@@ -106,7 +106,7 @@ RSpec.describe EzClient do
     end
 
     context "when query request option is provided" do
-      let(:request_options) { Hash[query: Hash[a: 1]] }
+      let(:request_options) { { query: { a: 1 } } }
 
       it "makes proper request" do
         request.perform
@@ -116,7 +116,7 @@ RSpec.describe EzClient do
     end
 
     context "when body request option is provided" do
-      let(:request_options) { Hash[body: "some body"] }
+      let(:request_options) { { body: "some body" } }
 
       it "makes proper request" do
         request.perform
@@ -125,7 +125,7 @@ RSpec.describe EzClient do
     end
 
     context "when json request option is provided" do
-      let(:request_options) { Hash[json: Hash[a: 1]] }
+      let(:request_options) { { json: { a: 1 } } }
 
       it "makes proper request" do
         request.perform
@@ -138,8 +138,8 @@ RSpec.describe EzClient do
     end
 
     context "when params request option is provided" do
-      let(:request_options) { Hash[params: params] }
-      let(:params) { Hash[a: 1] }
+      let(:request_options) { { params: params } }
+      let(:params) { { a: 1 } }
 
       it "makes proper request" do
         request.perform
@@ -159,7 +159,7 @@ RSpec.describe EzClient do
       end
 
       context "when request is using form and some param is File" do
-        let(:params) { Hash[a: File.new(Pathname.new(__dir__).join("files", "file.txt"))] }
+        let(:params) { { a: File.new(Pathname.new(__dir__).join("files", "file.txt")) } }
         let(:body) { webmock_requests.last.body }
 
         it "makes proper request" do
@@ -185,7 +185,7 @@ RSpec.describe EzClient do
     end
 
     context "when on_complete callback is provided" do
-      let(:client_options) { Hash[on_complete: on_complete] }
+      let(:client_options) { { on_complete: on_complete } }
       let(:calls) { [] }
 
       let(:on_complete) do
@@ -204,7 +204,7 @@ RSpec.describe EzClient do
     end
 
     context "when 404 response is returned" do
-      let(:webmock_response) { Hash[status: 404, body: "Not Found"] }
+      let(:webmock_response) { { status: 404, body: "Not Found" } }
 
       context "when calling perform on client" do
         it "performs a request" do
@@ -219,7 +219,7 @@ RSpec.describe EzClient do
         end
 
         it "raises error" do
-          expect(perform_proc).to raise_exception do |exception|
+          expect(&perform_proc).to raise_exception do |exception|
             expect(exception).to be_a(EzClient::ResponseStatusError)
             expect(exception.response).to be_a(EzClient::Response)
             expect(exception.response.body).to eq("Not Found")
@@ -231,7 +231,7 @@ RSpec.describe EzClient do
     end
 
     context "when keep_alive client option is provided" do
-      let(:client_options) { Hash[keep_alive: 10, timeout: 25] }
+      let(:client_options) { { keep_alive: 10, timeout: 25 } }
 
       it "sends proper Connection header" do
         expect(request.headers).to include("Connection" => "Keep-Alive")
@@ -246,14 +246,14 @@ RSpec.describe EzClient do
   context "when exception during request occurs" do
     before { request_stub.to_raise("Some error") }
 
-    let(:request_options) { Hash[metadata: :smth] }
+    let(:request_options) { { metadata: :smth } }
 
     it "raises that error" do
       expect { request.perform }.to raise_error("Some error")
     end
 
     context "when on_error callback is provided" do
-      let(:client_options) { Hash[on_error: on_error] }
+      let(:client_options) { { on_error: on_error } }
       let(:calls) { [] }
 
       let(:on_error) do
@@ -282,8 +282,8 @@ RSpec.describe EzClient do
     end
 
     context "when on_retry callback is provided" do
-      let(:client_options) { Hash[on_retry: on_retry] }
-      let(:request_options) { Hash[metadata: :smth] }
+      let(:client_options) { { on_retry: on_retry } }
+      let(:request_options) { { metadata: :smth } }
       let(:calls) { [] }
 
       let(:on_retry) do
@@ -307,7 +307,7 @@ RSpec.describe EzClient do
     let(:opts) { request.http_options }
 
     context "when timeout like integer" do
-      let(:client_options) { Hash[timeout: 10] }
+      let(:client_options) { { timeout: 10 } }
       let(:timeout) { 10.0 }
 
       it "uses it for request" do
@@ -317,7 +317,7 @@ RSpec.describe EzClient do
     end
 
     context "when timeout like hash" do
-      let(:client_options) { Hash[timeout: Hash[read: 5, write: 5, connect: 1]] }
+      let(:client_options) { { timeout: { read: 5, write: 5, connect: 1 } } }
       let(:expected_configs) { { write_timeout: 5.0, read_timeout: 5.0, connect_timeout: 1.0 } }
 
       it "uses request option for request" do
@@ -327,7 +327,7 @@ RSpec.describe EzClient do
     end
 
     context "when timeout request option is provided as well" do
-      let(:request_options) { Hash[timeout: "15"] }
+      let(:request_options) { { timeout: "15" } }
       let(:timeout) { 15.0 }
 
       it "uses request option for request" do
@@ -338,7 +338,7 @@ RSpec.describe EzClient do
   end
 
   context "when api_auth client option is provided" do
-    let(:client_options) { Hash[api_auth: %w[id secret]] }
+    let(:client_options) { { api_auth: %w[id secret] } }
 
     it "signs a request using ApiAuth lib" do
       expect(ApiAuth).to receive(:sign!) do |request, access_id, access_key|
@@ -353,7 +353,7 @@ RSpec.describe EzClient do
   end
 
   context "when unknown client option is passed" do
-    let(:client_options) { Hash[foo: "smth", body: "smth", timeout: 5] }
+    let(:client_options) { { foo: "smth", body: "smth", timeout: 5 } }
 
     it "raises error" do
       expect { client }.to raise_error(ArgumentError, "Unrecognized options: :foo, :body")
@@ -361,7 +361,7 @@ RSpec.describe EzClient do
   end
 
   context "when unknown request option is passed" do
-    let(:request_options) { Hash[foo: "smth", body: "smth", timeout: 5] }
+    let(:request_options) { { foo: "smth", body: "smth", timeout: 5 } }
 
     it "raises error" do
       expect { request }.to raise_error(ArgumentError, "Unrecognized options: :foo")
@@ -372,7 +372,7 @@ RSpec.describe EzClient do
     before { request_stub.to_return(webmock_response) }
 
     let(:response) { request.perform }
-    let(:webmock_response) { Hash[status: 201] }
+    let(:webmock_response) { { status: 201 } }
 
     context "201 response code" do
       specify do
@@ -387,8 +387,8 @@ RSpec.describe EzClient do
     end
 
     context "302 response code" do
-      let(:webmock_response) { Hash[status: 302, headers: response_headers] }
-      let(:response_headers) { Hash[] }
+      let(:webmock_response) { { status: 302, headers: response_headers } }
+      let(:response_headers) { {} }
 
       specify do
         expect(response.code).to eq(302)
@@ -401,9 +401,9 @@ RSpec.describe EzClient do
       end
 
       context "when follow param presents" do
-        let(:request_options) { Hash[follow: true] }
+        let(:request_options) { { follow: true } }
         let(:verb) { :get }
-        let(:response_headers) { Hash["Location" => "http://redirect.me"] }
+        let(:response_headers) { { "Location" => "http://redirect.me" } }
 
         before do
           stub_request(:get, /redirect\.me/)
@@ -418,7 +418,7 @@ RSpec.describe EzClient do
     end
 
     context "404 response code" do
-      let(:webmock_response) { Hash[status: 404] }
+      let(:webmock_response) { { status: 404 } }
 
       specify do
         expect(response.code).to eq(404)
@@ -432,7 +432,7 @@ RSpec.describe EzClient do
     end
 
     context "502 response code" do
-      let(:webmock_response) { Hash[status: 502] }
+      let(:webmock_response) { { status: 502 } }
 
       specify do
         expect(response.code).to eq(502)
@@ -447,7 +447,7 @@ RSpec.describe EzClient do
   end
 
   context "when retry_exceptions request option is provided" do
-    let(:request_options) { Hash[retry_exceptions: [SomeError]] }
+    let(:request_options) { { retry_exceptions: [SomeError] } }
 
     context "server is responding with error" do
       before { request_stub.to_raise(SomeError) }
@@ -458,7 +458,7 @@ RSpec.describe EzClient do
       end
 
       context "max_retries is 2" do
-        let(:request_options) { Hash[retry_exceptions: [SomeError], max_retries: 2] }
+        let(:request_options) { { retry_exceptions: [SomeError], max_retries: 2 } }
 
         it "raises exception after 2 retries" do
           expect { request.perform }.to raise_error(SomeError)
@@ -476,8 +476,8 @@ RSpec.describe EzClient do
       end
 
       context "when on_retry callback is provided" do
-        let(:client_options) { Hash[on_retry: on_retry] }
-        let(:request_options) { Hash[retry_exceptions: SomeError, metadata: :smth] }
+        let(:client_options) { { on_retry: on_retry } }
+        let(:request_options) { { retry_exceptions: SomeError, metadata: :smth } }
         let(:calls) { [] }
 
         let(:on_retry) do
@@ -499,7 +499,7 @@ RSpec.describe EzClient do
   end
 
   context "when basic_auth request option is provided as hash" do
-    let(:request_options) { Hash[basic_auth: Hash[user: "user", pass: "password"]] }
+    let(:request_options) { { basic_auth: { user: "user", pass: "password" } } }
 
     it "adds Authorization header" do
       expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
@@ -507,7 +507,7 @@ RSpec.describe EzClient do
   end
 
   context "when basic_auth request option is provided as array" do
-    let(:request_options) { Hash[basic_auth: %w[user password]] }
+    let(:request_options) { { basic_auth: %w[user password] } }
 
     it "adds Authorization header" do
       expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")

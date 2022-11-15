@@ -201,7 +201,7 @@ class EzClient::Request
   end
 
   def basic_auth
-    @basic_auth ||= begin
+    @basic_auth ||=
       case options[:basic_auth]
       when Array
         user, password = options[:basic_auth]
@@ -209,6 +209,5 @@ class EzClient::Request
       when Hash
         options[:basic_auth]
       end
-    end
   end
 end

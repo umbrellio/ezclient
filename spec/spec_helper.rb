@@ -1,25 +1,32 @@
 # frozen_string_literal: true
 
 require "simplecov"
-require "coveralls"
+require "simplecov-lcov"
+
+SimpleCov::Formatter::LcovFormatter.config do |config|
+  config.report_with_single_file = true
+  config.single_report_path = "coverage/lcov.info"
+end
 
 SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new([
   SimpleCov::Formatter::HTMLFormatter,
-  Coveralls::SimpleCov::Formatter,
+  SimpleCov::Formatter::LcovFormatter,
 ])
 
-SimpleCov.minimum_coverage(100)
 SimpleCov.start
 
-require "bundler/setup"
 require "webmock/rspec"
 require "ezclient"
 
 RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed
+
   config.example_status_persistence_file_path = ".rspec_status"
+
   config.disable_monkey_patching!
+  config.raise_errors_for_deprecations!
+
   config.expect_with(:rspec) { |c| c.syntax = :expect }
 
   config.mock_with :rspec do |mocks|
