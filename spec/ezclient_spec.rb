@@ -43,6 +43,7 @@ RSpec.describe EzClient do
       )
 
       expect(response.body).to eq("some body")
+      expect(response.elapsed_seconds).to be_a(Float)
       expect(response.headers).to eq("Some" => "header", "Set-Cookie" => "a=1")
       expect(response.cookies.to_a[0].to_s).to eq("a=1")
       expect(response.code).to eq(200)

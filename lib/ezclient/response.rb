@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
 class EzClient::Response
-  attr_accessor :http_response, :body
+  attr_accessor :http_response, :body, :elapsed_seconds
 
-  def initialize(http_response)
+  def initialize(http_response, elapsed_seconds)
     self.http_response = http_response
     self.body = http_response.body.to_s # Make sure we read the body for persistent connection
+    self.elapsed_seconds = elapsed_seconds
   end
 
   def headers

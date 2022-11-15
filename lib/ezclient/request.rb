@@ -22,8 +22,9 @@ class EzClient::Request
 
   def perform
     http_response = perform_request
+    elapsed_seconds = EzClient.get_time - request_start_time
 
-    EzClient::Response.new(http_response).tap do |response|
+    EzClient::Response.new(http_response, elapsed_seconds).tap do |response|
       on_complete.call(self, response, options[:metadata])
     end
   rescue => error
@@ -71,7 +72,7 @@ class EzClient::Request
 
   private
 
-  attr_accessor :client
+  attr_accessor :client, :request_start_time
 
   def http_request
     @http_request ||= begin
@@ -102,6 +103,7 @@ class EzClient::Request
 
   def perform_request
     with_retry do
+      self.request_start_time = EzClient.get_time
       # Use original client so that connection can be reused
       res = client.perform(http_request, http_options)
       return res unless follow
