@@ -10,7 +10,7 @@ class EzClient::Request
     query
   ].freeze
 
-  attr_accessor :verb, :url, :options
+  attr_accessor :verb, :url, :options, :elapsed_seconds
 
   def initialize(verb, url, options)
     self.verb = verb.to_s.upcase
@@ -21,7 +21,9 @@ class EzClient::Request
   end
 
   def perform
+    perform_started_at = EzClient.get_time
     http_response = perform_request
+    self.elapsed_seconds = EzClient.get_time - perform_started_at
 
     EzClient::Response.new(http_response).tap do |response|
       on_complete.call(self, response, options[:metadata])
