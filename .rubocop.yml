@@ -16,7 +16,6 @@ AllCops:
     - gemfile/**/*
   Exclude:
     - vendor/**/*
-    - gemfiles/**/*
 
 RSpec/Rails/HaveHttpStatus:
   Enabled: false

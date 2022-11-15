@@ -7,5 +7,3 @@
 /spec/reports/
 /tmp/
 .rspec_status
-Gemfile.lock
-/gemfiles/*.lock
