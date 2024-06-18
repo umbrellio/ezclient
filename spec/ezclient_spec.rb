@@ -375,7 +375,7 @@ RSpec.describe EzClient do
     let(:webmock_response) { { status: 201 } }
 
     context "object inspectation" do
-      specify do
+      specify "#inspect" do
         expect(response.inspect).to match({
           req: {
             raw: response.http_request.inspect,
@@ -387,6 +387,10 @@ RSpec.describe EzClient do
             body: response.body,
           },
         }.to_s)
+      end
+
+      specify "#to_s" do
+        expect(response.inspect).to eq(response.to_s)
       end
     end
 
