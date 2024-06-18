@@ -46,13 +46,13 @@ class EzClient::Response
     {
       request: {
         raw: http_request.inspect,
-        headers: http_request.headers
+        headers: http_request.headers,
       },
       response: {
         raw: http_response.inspect,
-        headers:,
-        body:
-      }
+        headers: headers,
+        body: body,
+      },
     }.to_s
   end
 
