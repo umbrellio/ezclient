@@ -2,6 +2,7 @@
 
 require "simplecov"
 require "simplecov-lcov"
+require "pry"
 
 SimpleCov::Formatter::LcovFormatter.config do |config|
   config.report_with_single_file = true

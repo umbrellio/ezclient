@@ -44,13 +44,13 @@ class EzClient::Response
 
   def inspect
     {
-      request: {
+      req: {
         raw: http_request.inspect,
-        headers: http_request.headers,
+        hdrs: http_request.headers,
       },
-      response: {
+      resp: {
         raw: http_response.inspect,
-        headers: headers,
+        hdrs: headers,
         body: body,
       },
     }.to_s

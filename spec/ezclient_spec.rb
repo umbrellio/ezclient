@@ -374,6 +374,22 @@ RSpec.describe EzClient do
     let(:response) { request.perform }
     let(:webmock_response) { { status: 201 } }
 
+    context "object inspectation" do
+      specify do
+        expect(response.inspect).to match({
+          req: {
+            raw: response.http_request.inspect,
+            hdrs: response.http_request.headers,
+          },
+          resp: {
+            raw: response.http_response.inspect,
+            hdrs: response.http_response.headers,
+            body: response.body,
+          },
+        }.to_s)
+      end
+    end
+
     context "201 response code" do
       specify do
         expect(response.code).to eq(201)
