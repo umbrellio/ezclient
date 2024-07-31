@@ -399,9 +399,11 @@ RSpec.describe EzClient do
           #     - see request (@http_request.host)
           #     - see request.verb
           #     - see request.url
+          # rubocop:disable Layout/LineEndStringConcatenationIndentation
+          # rubocop:disable Style/TrailingCommaInArguments
           expect(response.inspect).to eq(
             "{:req=>{" \
-              ":raw=>\"#<HTTP::Request/1.1 POST http://example.com/>\", "\
+              ":raw=>\"#<HTTP::Request/1.1 POST http://example.com/>\", " \
               ":hdrs=>#<HTTP::Headers " \
                 "{\"User-Agent\"=>\"ezclient/#{EzClient::VERSION}\", " \
                 "\"Connection\"=>\"close\", " \
@@ -411,6 +413,8 @@ RSpec.describe EzClient do
               ":hdrs=>#<HTTP::Headers {}>, " \
               ":body=>\"\"}}"
           )
+          # rubocop:enable Layout/LineEndStringConcatenationIndentation
+          # rubocop:enable Style/TrailingCommaInArguments
         end
       end
     end
