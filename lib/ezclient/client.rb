@@ -15,6 +15,7 @@ class EzClient::Client
     ssl_context
     timeout
     follow
+    error_wrapper
   ].freeze
 
   def initialize(options = {})
