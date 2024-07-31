@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 class EzClient::Response
-  attr_accessor :http_response, :body
+  attr_accessor :http_response, :body, :http_request
 
-  def initialize(http_response)
+  def initialize(http_response, http_request)
     self.http_response = http_response
+    self.http_request = http_request
     self.body = http_response.body.to_s # Make sure we read the body for persistent connection
   end
 
@@ -39,5 +40,23 @@ class EzClient::Response
 
   def error?
     client_error? || server_error?
+  end
+
+  def inspect
+    {
+      req: {
+        raw: http_request.inspect,
+        hdrs: http_request.headers,
+      },
+      resp: {
+        raw: http_response.inspect,
+        hdrs: headers,
+        body: body,
+      },
+    }.to_s
+  end
+
+  def to_s
+    inspect
   end
 end

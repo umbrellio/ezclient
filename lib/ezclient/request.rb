@@ -23,7 +23,7 @@ class EzClient::Request
   def perform
     http_response = perform_request
 
-    EzClient::Response.new(http_response).tap do |response|
+    EzClient::Response.new(http_response, http_request).tap do |response|
       on_complete.call(self, response, options[:metadata])
     end
   rescue => error

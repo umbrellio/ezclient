@@ -394,6 +394,51 @@ RSpec.describe EzClient do
     let(:response) { request.perform }
     let(:webmock_response) { { status: 201 } }
 
+    context "object inspectation" do
+      specify "#inspect" do
+        expect(response.inspect).to match({
+          req: {
+            raw: response.http_request.inspect,
+            hdrs: response.http_request.headers,
+          },
+          resp: {
+            raw: response.http_response.inspect,
+            hdrs: response.http_response.headers,
+            body: response.body,
+          },
+        }.to_s)
+      end
+
+      specify "#to_s" do
+        aggregate_failures "<inspect> representation" do
+          expect(response.inspect).to eq(response.to_s)
+
+          # NOTE:
+          #   - for better visual representability;
+          #   - example.com is fetched from `request` object:
+          #     - see request (@http_request.host)
+          #     - see request.verb
+          #     - see request.url
+          # rubocop:disable Layout/LineEndStringConcatenationIndentation
+          # rubocop:disable Style/TrailingCommaInArguments
+          expect(response.inspect).to eq(
+            "{:req=>{" \
+              ":raw=>\"#<HTTP::Request/1.1 POST http://example.com/>\", " \
+              ":hdrs=>#<HTTP::Headers " \
+                "{\"User-Agent\"=>\"ezclient/#{EzClient::VERSION}\", " \
+                "\"Connection\"=>\"close\", " \
+                "\"Host\"=>\"example.com\"}>}, " \
+            ":resp=>{" \
+              ":raw=>\"#<HTTP::Response/1.1 #{webmock_response[:status]} Created {}>\", " \
+              ":hdrs=>#<HTTP::Headers {}>, " \
+              ":body=>\"\"}}"
+          )
+          # rubocop:enable Layout/LineEndStringConcatenationIndentation
+          # rubocop:enable Style/TrailingCommaInArguments
+        end
+      end
+    end
+
     context "201 response code" do
       specify do
         expect(response.code).to eq(201)
