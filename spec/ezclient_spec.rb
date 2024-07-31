@@ -390,7 +390,28 @@ RSpec.describe EzClient do
       end
 
       specify "#to_s" do
-        expect(response.inspect).to eq(response.to_s)
+        aggregate_failures "<inspect> representation" do
+          expect(response.inspect).to eq(response.to_s)
+
+          # NOTE:
+          #   - for better visual representability;
+          #   - example.com is fetched from `request` object:
+          #     - see request (@http_request.host)
+          #     - see request.verb
+          #     - see request.url
+          expect(response.inspect).to eq(
+            "{:req=>{" \
+              ":raw=>\"#<HTTP::Request/1.1 POST http://example.com/>\", "\
+              ":hdrs=>#<HTTP::Headers " \
+                "{\"User-Agent\"=>\"ezclient/#{EzClient::VERSION}\", " \
+                "\"Connection\"=>\"close\", " \
+                "\"Host\"=>\"example.com\"}>}, " \
+            ":resp=>{" \
+              ":raw=>\"#<HTTP::Response/1.1 #{webmock_response[:status]} Created {}>\", " \
+              ":hdrs=>#<HTTP::Headers {}>, " \
+              ":body=>\"\"}}"
+          )
+        end
       end
     end
 
