@@ -46,6 +46,7 @@ Valid client options are:
 - `ssl_context` – ssl context for requests (an `OpenSSL::SSL::SSLContext` instance)
 - `timeout` – timeout for requests in seconds or hash like `{ read: 5, write: 5, connect: 1 }`
 - `follow` – enable following redirects (`true` or hash with options – e.g. `{ max_hops: 1, strict: false}`)
+- `error_wrapper` – callback called on request exception, makes it possible to handle any error, default behavior: `raise error`
 
 All these options are passed to each request made by this client but can be overriden on per-request basis.
 
@@ -91,6 +92,7 @@ You can provide `on_complete`, `on_error` and `on_retry` callbacks like this:
 on_complete = -> (request, response, metadata) { ... }
 on_error = -> (request, error, metadata) { ... }
 on_retry = -> (request, error, metadata) { ... }
+error_wrapper = -> (request, error, metadata) { raise error }
 
 client = EzClient.new(
   on_complete: on_complete,
@@ -98,6 +100,7 @@ client = EzClient.new(
   on_retry: on_retry,
   retry_exceptions: [StandardError],
   max_retries: 2,
+  error_wrapper: error_wrapper
 )
 
 response = client.perform!(:get, url, metadata: :hello)
