@@ -271,6 +271,26 @@ RSpec.describe EzClient do
         expect(calls.size).to eq(1)
       end
     end
+
+    context "when error_wrapper callback is provided" do
+      let(:client_options) { { error_wrapper: error_wrapper } }
+      let(:calls) { [] }
+
+      let(:error_wrapper) do
+        proc do |request, error, _metadata|
+          expect(request.url).to eq("http://example.com")
+          expect(request.elapsed_seconds).to be_a(Float)
+          expect(error).to be_a(StandardError)
+          calls << nil
+          raise "Wrapped some error"
+        end
+      end
+
+      it "calls the error_wrapper callback" do
+        expect { request.perform }.to raise_error("Wrapped some error")
+        expect(calls.size).to eq(1)
+      end
+    end
   end
 
   context "when connection exception occurs" do

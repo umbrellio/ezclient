@@ -28,7 +28,7 @@ class EzClient::Request
     end
   rescue => error
     on_error.call(self, error, options[:metadata])
-    raise error
+    error_wrapper.call(self, error, options[:metadata])
   end
 
   def perform!
@@ -172,6 +172,10 @@ class EzClient::Request
   def follow
     return unless options[:follow]
     options[:follow].is_a?(Hash) ? options[:follow] : {}
+  end
+
+  def error_wrapper
+    options[:error_wrapper] || proc { |_request, error, _metadata| raise error }
   end
 
   def prepare_headers(headers)
