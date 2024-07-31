@@ -5,7 +5,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "ezclient/version"
 
 Gem::Specification.new do |spec|
-  spec.required_ruby_version = ">= 2.7"
+  spec.required_ruby_version = ">= 3.0"
 
   spec.name = "ezclient"
   spec.version = EzClient::VERSION
@@ -20,15 +20,4 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "http", ">= 4"
-
-  spec.add_development_dependency "bundler"
-  spec.add_development_dependency "coveralls"
-  spec.add_development_dependency "pry"
-  spec.add_development_dependency "rake"
-  spec.add_development_dependency "rspec"
-  spec.add_development_dependency "rubocop-config-umbrellio"
-  spec.add_development_dependency "rubocop-rake"
-  spec.add_development_dependency "simplecov"
-  spec.add_development_dependency "simplecov-lcov"
-  spec.add_development_dependency "webmock"
 end

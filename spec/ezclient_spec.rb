@@ -132,7 +132,7 @@ RSpec.describe EzClient do
 
         expect(webmock_requests.last.body).to eq('{"a":1}')
         expect(webmock_requests.last.headers).to include(
-          "Content-Type" => "application/json; charset=UTF-8",
+          "Content-Type" => "application/json; charset=utf-8",
         )
       end
     end

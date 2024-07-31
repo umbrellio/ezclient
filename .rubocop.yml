@@ -5,7 +5,7 @@ inherit_gem:
 
 AllCops:
   DisplayCopNames: true
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.0
   Include:
     - bin/console
     - Gemfile
@@ -18,4 +18,7 @@ AllCops:
     - vendor/**/*
 
 RSpec/Rails/HaveHttpStatus:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
   Enabled: false
