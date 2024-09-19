@@ -397,11 +397,11 @@ RSpec.describe EzClient do
     context "object inspectation" do
       specify "#inspect" do
         expect(response.inspect.gsub(/0x\w+/, "0x0000")).to eq(<<~TXT.gsub(/\s+/, " ").strip)
-            #<EzClient::Response:0x0000
-              @http_response=#<HTTP::Response/1.1 201 Created {}>,
-              @http_request=#<HTTP::Request/1.1 POST http://example.com/>,
-              @body="">
-          TXT
+          #<EzClient::Response:0x0000
+            @http_response=#<HTTP::Response/1.1 201 Created {}>,
+            @http_request=#<HTTP::Request/1.1 POST http://example.com/>,
+            @body="">
+        TXT
       end
 
       specify "#to_s" do
