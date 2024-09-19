@@ -406,9 +406,7 @@ RSpec.describe EzClient do
       end
 
       specify "#to_s" do
-        aggregate_failures "<inspect> representation" do
-          expect(response.inspect).to eq(response.to_s)
-        end
+        expect(response.inspect).to eq(response.to_s)
       end
     end
 
