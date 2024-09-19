@@ -42,20 +42,6 @@ class EzClient::Response
     client_error? || server_error?
   end
 
-  def inspect
-    {
-      req: {
-        raw: http_request.inspect,
-        hdrs: http_request.headers,
-      },
-      resp: {
-        raw: http_response.inspect,
-        hdrs: headers,
-        body: body,
-      },
-    }.to_s
-  end
-
   def to_s
     inspect
   end

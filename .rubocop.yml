@@ -17,8 +17,8 @@ AllCops:
   Exclude:
     - vendor/**/*
 
-RSpec/Rails/HaveHttpStatus:
+RSpec/SpecFilePathFormat:
   Enabled: false
 
-RSpec/SpecFilePathFormat:
+RSpec/ExpectInLet:
   Enabled: false
