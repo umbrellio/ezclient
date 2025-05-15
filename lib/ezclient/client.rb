@@ -28,9 +28,12 @@ class EzClient::Client
 
     keep_alive_timeout = options.delete(:keep_alive)
     api_auth = options.delete(:api_auth)
+    ssl_context = options[:ssl_context]
 
     if keep_alive_timeout
-      client = persistent_client_registry.for(url, timeout: keep_alive_timeout)
+      client = persistent_client_registry.for(
+        url, ssl_context: ssl_context, timeout: keep_alive_timeout
+      )
     else
       client = HTTP::Client.new
     end

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ezclient (1.7.1)
+    ezclient (1.7.2)
       http (>= 4)
 
 GEM
