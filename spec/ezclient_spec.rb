@@ -159,7 +159,7 @@ RSpec.describe EzClient do
       end
 
       context "when request is using form and some param is File" do
-        let(:params) { { a: File.new(Pathname.new(__dir__).join("files", "file.txt")) } }
+        let(:params) { { a: read_file("file.txt") } }
         let(:body) { webmock_requests.last.body }
 
         it "makes proper request" do
