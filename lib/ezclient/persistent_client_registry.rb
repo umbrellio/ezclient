@@ -28,8 +28,8 @@ class EzClient::PersistentClientRegistry
   end
 
   def cleanup_registry!
-    registry.each do |_origin, ssl_bucket_clients|
-      ssl_bucket_clients.delete_if { |_ssl_bucket, client| client.timed_out? }
+    registry.each_value do |ssl_buckets|
+      ssl_buckets.delete_if { |_ssl_bucket, client| client.timed_out? }
     end
   end
 end
