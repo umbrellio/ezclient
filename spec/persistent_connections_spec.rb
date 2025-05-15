@@ -40,7 +40,7 @@ RSpec.describe "Persistent Connections" do
   end
 
   it "boots up separate http connections for different ssl contexts" do
-    client = EzClient.new(keep_alive: 1)
+    client = EzClient.new(keep_alive: 15)
 
     cert1 = read_file("cert1/cert.pem")
     key1 = read_file("cert1/key.pem")
@@ -57,8 +57,6 @@ RSpec.describe "Persistent Connections" do
     2.times do
       client.perform!(:get, "https://ya.ru", ssl_context: ssl_context2)
     end
-
-    GC.start
 
     connection_count = ObjectSpace.each_object(HTTP::Connection).count
     expect(connection_count).to eq(2)
