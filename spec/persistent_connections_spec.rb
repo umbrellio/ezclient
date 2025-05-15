@@ -58,6 +58,8 @@ RSpec.describe "Persistent Connections" do
       client.perform!(:get, "https://ya.ru", ssl_context: ssl_context2)
     end
 
+    GC.start
+
     connection_count = ObjectSpace.each_object(HTTP::Connection).count
     expect(connection_count).to eq(2)
   end
