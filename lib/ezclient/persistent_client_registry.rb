@@ -11,7 +11,7 @@ class EzClient::PersistentClientRegistry
     origin = get_origin(url)
     registry[origin] ||= {}
 
-    ssl_bucket = ssl_context ? get_cert_sha256(ssl_context.cert) : nil
+    ssl_bucket = ssl_context&.cert ? get_cert_sha256(ssl_context.cert) : nil
     registry[origin][ssl_bucket] ||= EzClient::PersistentClient.new(origin, timeout)
   end
 
