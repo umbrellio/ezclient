@@ -8,6 +8,8 @@ RSpec.describe "Persistent Connections" do
     WebMock.enable!
   end
 
+  before { GC.start }
+
   def read_file(path)
     File.new("#{__dir__}/files/#{path}").read
   end
