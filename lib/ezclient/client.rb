@@ -23,7 +23,7 @@ class EzClient::Client
     self.request_options = options
     EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
     self.persistent_client_registry = EzClient::PersistentClientRegistry.build_for_client(
-      cleanup_interval: options[:cleanup_interval]
+      cleanup_interval: options[:cleanup_interval],
     )
   end
 
