@@ -199,6 +199,5 @@ RSpec.describe "Persistent Connections" do
         end
       end
     end
-
   end
 end
