@@ -4,6 +4,7 @@ class EzClient::Client
   REQUEST_OPTION_KEYS = %i[
     api_auth
     basic_auth
+    cleanup_interval
     cookies
     headers
     keep_alive
@@ -21,6 +22,9 @@ class EzClient::Client
   def initialize(options = {})
     self.request_options = options
     EzClient::CheckOptions.call(options, REQUEST_OPTION_KEYS)
+    self.persistent_client_registry = EzClient::PersistentClientRegistry.build_for_client(
+      cleanup_interval: options[:cleanup_interval]
+    )
   end
 
   def request(verb, url, **options)
@@ -57,9 +61,5 @@ class EzClient::Client
 
   private
 
-  attr_accessor :request_options
-
-  def persistent_client_registry
-    @persistent_client_registry ||= EzClient::PersistentClientRegistry.build_for_client
-  end
+  attr_accessor :request_options, :persistent_client_registry
 end

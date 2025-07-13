@@ -241,6 +241,15 @@ RSpec.describe EzClient do
         expect(response.body).to eq("some body")
       end
     end
+
+    context "when cleanup_interval client option is provided" do
+      let(:client_options) { { keep_alive: 10, cleanup_interval: 30 } }
+
+      it "uses custom cleanup interval" do
+        registry = client.send(:persistent_client_registry)
+        expect(registry.send(:cleanup_interval)).to eq(30)
+      end
+    end
   end
 
   context "when exception during request occurs" do

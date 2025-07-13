@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 class EzClient::PersistentClientRegistry
-  CLEANUP_INTERVAL = 60
+  DEFAULT_CLEANUP_INTERVAL = 60
 
-  def self.build_for_client
-    new
+  def self.build_for_client(cleanup_interval: nil)
+    new(cleanup_interval: cleanup_interval || DEFAULT_CLEANUP_INTERVAL)
   end
 
-  def initialize
+  def initialize(cleanup_interval: DEFAULT_CLEANUP_INTERVAL)
     self.registry = {}
     self.cert_hash_cache = {}.compare_by_identity
     self.origin_cache = {}
     self.last_cleanup_at = nil
+    self.cleanup_interval = cleanup_interval
   end
 
   def for(url, ssl_context:, timeout:)
@@ -42,7 +43,7 @@ class EzClient::PersistentClientRegistry
 
   private
 
-  attr_accessor :registry, :cert_hash_cache, :origin_cache, :last_cleanup_at
+  attr_accessor :registry, :cert_hash_cache, :origin_cache, :last_cleanup_at, :cleanup_interval
 
   def get_cached_cert_hash(cert)
     cert_hash_cache[cert] ||= Digest::SHA256.hexdigest(cert.to_der).freeze
@@ -58,7 +59,7 @@ class EzClient::PersistentClientRegistry
 
   def cleanup_registry!
     current_time = EzClient.get_time
-    return if last_cleanup_at && (current_time - last_cleanup_at) < CLEANUP_INTERVAL
+    return if last_cleanup_at && (current_time - last_cleanup_at) < cleanup_interval
 
     self.last_cleanup_at = current_time
     registry.delete_if { |_key, client| client.timed_out? }

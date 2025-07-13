@@ -35,7 +35,7 @@ RSpec.describe "Persistent Connections" do
     let(:current_time_shift) { 2 }
 
     it "removes connections that are timed out on each request" do
-      stub_const("EzClient::PersistentClientRegistry::CLEANUP_INTERVAL", 5)
+      stub_const("EzClient::PersistentClientRegistry::DEFAULT_CLEANUP_INTERVAL", 5)
 
       client = EzClient.new(keep_alive: 1, timeout: 15)
 
@@ -116,8 +116,8 @@ RSpec.describe "Persistent Connections" do
     end
 
     context "with cleanup interval optimization" do
-      it "skips cleanup if called within CLEANUP_INTERVAL" do
-        stub_const("EzClient::PersistentClientRegistry::CLEANUP_INTERVAL", 10)
+      it "skips cleanup if called within DEFAULT_CLEANUP_INTERVAL" do
+        stub_const("EzClient::PersistentClientRegistry::DEFAULT_CLEANUP_INTERVAL", 10)
 
         registry.send(:cleanup_registry!)
 
@@ -125,18 +125,19 @@ RSpec.describe "Persistent Connections" do
         registry.send(:cleanup_registry!)
       end
 
-      it "performs cleanup after CLEANUP_INTERVAL has passed" do
-        stub_const("EzClient::PersistentClientRegistry::CLEANUP_INTERVAL", 10)
-
+      it "performs cleanup after DEFAULT_CLEANUP_INTERVAL has passed" do
         current_time = 0
         allow(EzClient).to receive(:get_time) { current_time }
 
-        registry.send(:cleanup_registry!)
+        # Create registry with custom cleanup_interval
+        test_registry = EzClient::PersistentClientRegistry.new(cleanup_interval: 10)
+
+        test_registry.send(:cleanup_registry!)
 
         current_time = 15
 
-        expect(registry.send(:registry)).to receive(:delete_if).and_call_original
-        registry.send(:cleanup_registry!)
+        expect(test_registry.send(:registry)).to receive(:delete_if).and_call_original
+        test_registry.send(:cleanup_registry!)
       end
     end
 

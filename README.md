@@ -35,6 +35,7 @@ Valid client options are:
 
 - `api_auth` – arguments for `ApiAuth.sign!` (see https://github.com/mgomes/api_auth)
 - `basic_auth` – arguments for basic authentication (either a hash with `:user` and `:pass` keys or a two-element array)
+- `cleanup_interval` – interval for cleaning up timed out connections in seconds (default: 60)
 - `cookies` – a hash of cookies (or `HTTP::CookieJar` object) for requests
 - `headers` – a hash of headers for requests
 - `keep_alive` – timeout for persistent connection in seconds
