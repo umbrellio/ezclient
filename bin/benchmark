@@ -85,7 +85,7 @@ module SSLBenchmark
   extend BenchmarkRunner
 
   def run
-    Printer.benchmark_title(1, "SSL Certificate Requests (hash caching test)")
+    Printer.benchmark_title(1, "SSL Certificate Requests")
 
     ssl_context1 = make_ssl_context(CERT1, KEY1)
     ssl_context2 = make_ssl_context(CERT2, KEY2)
