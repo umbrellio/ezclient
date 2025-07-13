@@ -80,9 +80,24 @@ module MyApp
 end
 ```
 
-Alose note that, as of now, EzClient will
+Also note that, as of now, EzClient will
 automatically retry the request on any `HTTP::ConnectionError` exception in this case which may possibly result in two requests
 received by a server (see https://github.com/httprb/http/issues/459).
+
+### Closing persistent connections
+
+If you need to close all persistent connections (e.g., when forking), you can use the `truncate!` method:
+
+```ruby
+client = EzClient.new(keep_alive: 100)
+
+# ... make some requests ...
+
+# Close all persistent connections and clear caches
+client.truncate!
+```
+
+This is particularly useful in forking scenarios (e.g., when using Pitchfork or Puma in fork mode).
 
 ## Callbacks and retrying
 

@@ -51,11 +51,15 @@ class EzClient::Client
     request(*args, **kwargs).perform!
   end
 
+  def truncate!
+    persistent_client_registry.truncate!
+  end
+
   private
 
   attr_accessor :request_options
 
   def persistent_client_registry
-    @persistent_client_registry ||= EzClient::PersistentClientRegistry.new
+    @persistent_client_registry ||= EzClient::PersistentClientRegistry.build_for_client
   end
 end

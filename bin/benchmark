@@ -1,0 +1,317 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "benchmark/ips"
+require "memory_profiler"
+require "webmock"
+require "json"
+require "fileutils"
+require "webmock/rspec"
+
+require_relative "../lib/ezclient"
+
+def make_ssl_context(cert, key)
+  OpenSSL::SSL::SSLContext.new.tap do |ctx|
+    ctx.cert = OpenSSL::X509::Certificate.new(cert)
+    ctx.key = OpenSSL::PKey.read(key)
+  end
+end
+
+def read_cert_file(path)
+  File.read(File.join(__dir__, "../spec/files/#{path}"))
+end
+
+WebMock.enable!
+WebMock.disable_net_connect!
+RESULTS_DIR = Pathname.getwd.join("benchmark_results").freeze
+RESULTS_DIR.mkpath
+FileUtils.mkdir_p(RESULTS_DIR)
+
+CURRENT_BRANCH = `git branch --show-current`.strip.freeze
+RESULTS_FILE = RESULTS_DIR.join("#{CURRENT_BRANCH.tr('/', '_')}.json")
+
+CERT1 = read_cert_file("cert1/cert.pem")
+KEY1 = read_cert_file("cert1/key.pem")
+CERT2 = read_cert_file("cert2/cert.pem")
+KEY2 = read_cert_file("cert2/key.pem")
+
+TEST_URLS = [
+  "https://api.example.com/users/1",
+  "https://api.example.com/users/2",
+  "https://api.example.com/posts/1",
+  "https://different.com/data",
+  "https://another.org/info",
+].freeze
+
+WebMock.stub_request(:any, /.*/).to_return(
+  status: 200,
+  body: "OK",
+  headers: { "Content-Type" => "text/plain" },
+)
+
+module Benchmarks
+  extend self
+
+  def run_all
+    Printer.run_header(CURRENT_BRANCH)
+
+    {
+      ssl_certificate_requests: SSLBenchmark.run,
+      multiple_url_requests: URLBenchmark.run,
+      cleanup_performance: CleanupBenchmark.run,
+      memory_usage: MemoryBenchmark.run,
+    }
+  end
+end
+
+module BenchmarkRunner
+  private
+
+  def run_benchmark
+    result = Benchmark.ips do |x|
+      x.config(time: 2, warmup: 1)
+      self.benchmark_runner = x
+      yield
+    end
+    result.entries.to_h { |entry| [entry.label, entry.ips] }
+  end
+
+  attr_accessor :benchmark_runner
+end
+
+module SSLBenchmark
+  extend self
+  extend BenchmarkRunner
+
+  def run
+    Printer.benchmark_title(1, "SSL Certificate Requests (hash caching test)")
+
+    ssl_context1 = make_ssl_context(CERT1, KEY1)
+    ssl_context2 = make_ssl_context(CERT2, KEY2)
+
+    run_benchmark do
+      benchmark_runner.report("requests with same SSL cert") do
+        client = EzClient.new(keep_alive: 30)
+        30.times do
+          client.perform!(:get, "https://example.com", ssl_context: ssl_context1)
+        end
+      end
+
+      benchmark_runner.report("requests with different SSL certs") do
+        client = EzClient.new(keep_alive: 30)
+        30.times do
+          client.perform!(:get, "https://example.com", ssl_context: ssl_context1)
+          client.perform!(:get, "https://example.com", ssl_context: ssl_context2)
+        end
+      end
+    end
+  end
+end
+
+module URLBenchmark
+  extend self
+  extend BenchmarkRunner
+
+  def run
+    Printer.benchmark_title(2, "Multiple URL Requests")
+
+    run_benchmark do
+      benchmark_runner.report("requests to same origin") do
+        client = EzClient.new(keep_alive: 30)
+        30.times do |i|
+          client.perform!(:get, "https://api.example.com/endpoint/#{i}")
+        end
+      end
+
+      benchmark_runner.report("requests to different origins") do
+        client = EzClient.new(keep_alive: 30)
+        10.times do
+          TEST_URLS.each do |url|
+            client.perform!(:get, url)
+          end
+        end
+      end
+    end
+  end
+end
+
+module CleanupBenchmark
+  extend self
+  extend BenchmarkRunner
+
+  def run
+    Printer.benchmark_title(3, "Cleanup Performance")
+
+    run_benchmark do
+      benchmark_runner.report("frequent requests") do
+        client = EzClient.new(keep_alive: 0.5)
+        20.times do
+          client.perform!(:get, "https://example.com")
+        end
+      end
+    end
+  end
+end
+
+module MemoryBenchmark
+  extend self
+
+  def run
+    Printer.benchmark_title(4, "Memory Usage Analysis")
+
+    ssl_context = make_ssl_context(CERT1, KEY1)
+
+    report = MemoryProfiler.report do
+      client = EzClient.new(keep_alive: 30)
+
+      50.times do |i|
+        url = "https://example#{i % 5}.com/path"
+        client.perform!(:get, url, ssl_context: i.even? ? ssl_context : nil)
+      end
+    end
+
+    Printer.memory_report(report)
+
+    {
+      total_allocated_bytes: report.total_allocated_memsize,
+      total_retained_bytes: report.total_retained_memsize,
+      total_allocated_objects: report.total_allocated,
+      total_retained_objects: report.total_retained,
+    }
+  end
+end
+
+module Printer
+  extend self
+
+  def benchmark_title(test_number, title)
+    puts "\n#{test_number}. #{title}"
+    puts "-" * 60
+  end
+
+  def run_header(branch)
+    puts "Running benchmarks on branch: #{branch}"
+    puts "=" * 60
+  end
+
+  def memory_report(report)
+    puts "Total allocated: #{report.total_allocated_memsize} bytes"
+    puts "Total retained:  #{report.total_retained_memsize} bytes"
+    puts "Allocated objects: #{report.total_allocated}"
+    puts "Retained objects:  #{report.total_retained}"
+  end
+
+  def results_saved(file)
+    puts "\nResults saved to: #{file}"
+  end
+
+  def comparison_header
+    puts "\n#{"=" * 60}"
+    puts "COMPARISON WITH MASTER"
+    puts "=" * 60
+  end
+
+  def benchmark_section(bench_name)
+    puts "\n#{bench_name.tr('_', ' ').capitalize}:"
+  end
+
+  def ips_comparison(test, current_ips, master_ips)
+    diff_percent = ((current_ips - master_ips) / master_ips * 100).round(2)
+    status = diff_percent.positive? ? "🚀 FASTER" : "🐌 SLOWER"
+
+    puts "  #{test}:"
+    puts "    Master:  #{master_ips.round(2)} i/s"
+    puts "    Current: #{current_ips.round(2)} i/s"
+    puts "    Change:  #{diff_percent}% #{status}"
+  end
+
+  def memory_section
+    puts "\nMemory Usage:"
+  end
+
+  def memory_comparison(metric, current_val, master_val)
+    diff = current_val - master_val
+    diff_percent = (diff.to_f / master_val * 100).round(2)
+    status = diff.negative? ? "✅ BETTER" : "❌ WORSE"
+
+    puts "  #{metric.tr('_', ' ').capitalize}:"
+    puts "    Master:  #{master_val}"
+    puts "    Current: #{current_val}"
+    puts "    Change:  #{diff} bytes (#{diff_percent}%) #{status}"
+  end
+
+  def error(error)
+    puts "Error running benchmarks: #{error.message}"
+    puts error.backtrace
+  end
+end
+
+module ComparerWithMaster
+  extend self
+
+  def process(current_results)
+    master_file = RESULTS_DIR.join("master.json")
+
+    return unless File.exist?(master_file) && CURRENT_BRANCH != "master"
+
+    Printer.comparison_header
+    master_results = JSON.parse(File.read(master_file))
+
+    # Convert current results to string keys for consistency with JSON
+    current_results_str = current_results.transform_keys(&:to_s).transform_values do |value|
+      value.is_a?(Hash) ? value.transform_keys(&:to_s) : value
+    end
+
+    compare_ips_benchmarks(current_results_str, master_results)
+    compare_memory_usage(current_results_str, master_results)
+  end
+
+  private
+
+  def compare_ips_benchmarks(current_results, master_results)
+    %w[ssl_certificate_requests multiple_url_requests cleanup_performance].each do |bench|
+      Printer.benchmark_section(bench)
+
+      bench_results = current_results[bench]
+      master_bench = master_results[bench]
+
+      next unless bench_results && master_bench
+
+      bench_results.each do |test, current_ips|
+        master_ips = master_bench[test]
+        next unless master_ips
+
+        Printer.ips_comparison(test, current_ips, master_ips)
+      end
+    end
+  end
+
+  def compare_memory_usage(current_results, master_results)
+    Printer.memory_section
+    current_mem = current_results["memory_usage"]
+    master_mem = master_results["memory_usage"]
+
+    return unless current_mem && master_mem
+
+    %w[total_allocated_bytes total_retained_bytes].each do |metric|
+      current_val = current_mem[metric]
+      master_val = master_mem[metric]
+      next unless current_val && master_val
+
+      Printer.memory_comparison(metric, current_val, master_val)
+    end
+  end
+end
+
+begin
+  results = Benchmarks.run_all
+
+  File.write(RESULTS_FILE, JSON.pretty_generate(results))
+  Printer.results_saved(RESULTS_FILE)
+
+  ComparerWithMaster.process(results)
+rescue => error
+  Printer.error(error)
+  exit 1
+end

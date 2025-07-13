@@ -548,4 +548,47 @@ RSpec.describe EzClient do
       expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
     end
   end
+
+  context "with truncate!" do
+    before do
+      allow(EzClient::PersistentClientRegistry).to receive(:build_for_client).and_return(registry)
+    end
+
+    before do
+      stub_request(:get, "https://example1.com").to_return(status: 200, body: "OK")
+      stub_request(:get, "https://example2.com").to_return(status: 200, body: "OK")
+    end
+
+    let(:registry) { EzClient::PersistentClientRegistry.new }
+
+    it "clears all internal state" do
+      client = EzClient.new(keep_alive: 10)
+
+      cert_data = File.read("#{__dir__}/files/cert1/cert.pem")
+      cert = OpenSSL::X509::Certificate.new(cert_data)
+      ssl_context = OpenSSL::SSL::SSLContext.new
+      ssl_context.cert = cert
+
+      client.perform!(:get, "https://example1.com")
+      client.perform!(:get, "https://example2.com", ssl_context: ssl_context)
+
+      registry.send(:get_origin, "https://example3.com/path")
+
+      registry.send(:get_cached_cert_hash, cert)
+
+      expect(registry.send(:registry).size).to eq(2)
+      expect(registry.send(:origin_cache).size).not_to eq(0)
+      expect(registry.send(:cert_hash_cache).size).not_to eq(0)
+
+      registry.send(:cleanup_registry!)
+      expect(registry.send(:last_cleanup_at)).not_to be_nil
+
+      client.truncate!
+
+      expect(registry.send(:registry)).to be_empty
+      expect(registry.send(:origin_cache)).to be_empty
+      expect(registry.send(:cert_hash_cache)).to be_empty
+      expect(registry.send(:last_cleanup_at)).to be_nil
+    end
+  end
 end

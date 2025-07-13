@@ -3,8 +3,10 @@
 source "https://rubygems.org"
 gemspec
 
+gem "benchmark-ips"
 gem "bundler"
 gem "coveralls"
+gem "memory_profiler"
 gem "pry"
 gem "rake"
 gem "rspec"
