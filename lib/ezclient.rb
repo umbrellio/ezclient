@@ -12,6 +12,9 @@ require_relative "ezclient/errors"
 require_relative "ezclient/check_options"
 
 module EzClient
+  # NOTE: Whether httprb v6+ is being used (has breaking API changes vs v4/v5)
+  HTTP_GEM_V6 = Gem::Version.new(HTTP::VERSION) >= Gem::Version.new("6.0.0")
+
   def self.new(*args)
     Client.new(*args)
   end

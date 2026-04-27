@@ -396,12 +396,14 @@ RSpec.describe EzClient do
 
     context "object inspectation" do
       specify "#inspect" do
-        expect(response.inspect.gsub(/0x\w+/, "0x0000")).to eq(<<~TXT.gsub(/\s+/, " ").strip)
-          #<EzClient::Response:0x0000
-            @http_response=#<HTTP::Response/1.1 201 Created {}>,
-            @http_request=#<HTTP::Request/1.1 POST http://example.com/>,
-            @body="">
-        TXT
+        inspected = response.inspect.gsub(/0x\w+/, "0x0000")
+        # NOTE: HTTP::Response#inspect format changed between httprb v5 and v6:
+        # NOTE: v5: "#<HTTP::Response/1.1 201 Created {}>"  (shows headers as {})
+        # NOTE: v6: "#<HTTP::Response/1.1 201 Created >"    (shows mime_type, nil = empty)
+        expect(inspected).to include("#<EzClient::Response:0x0000")
+        expect(inspected).to include("@http_response=#<HTTP::Response/1.1 201 Created")
+        expect(inspected).to include("@http_request=#<HTTP::Request/1.1 POST http://example.com/>")
+        expect(inspected).to include('@body="">')
       end
 
       specify "#to_s" do
@@ -546,6 +548,83 @@ RSpec.describe EzClient do
 
     it "adds Authorization header" do
       expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
+    end
+  end
+
+  # NOTE: The following contexts exercise httprb v6-specific code paths by stubbing
+  # NOTE: EzClient::HTTP_GEM_V6 = true, ensuring coverage even when running under httprb v5.
+  context "when HTTP_GEM_V6 is true (v6 code paths)" do
+    before do
+      stub_const("EzClient::HTTP_GEM_V6", true)
+
+      # NOTE: HTTP::Request::Builder doesn't exist in httprb v5; stub it to delegate
+      # NOTE: to the v5 build_request API so requests remain WebMock-compatible.
+      stub_const("HTTP::Request::Builder", Class.new do
+        def initialize(opts)
+          @opts = opts
+        end
+
+        def build(verb, url)
+          HTTP::Client.new.build_request(verb, url, @opts)
+        end
+      end)
+    end
+
+    context "when making a basic request" do
+      before { request_stub.to_return(body: "v6 response") }
+
+      it "performs request using HTTP::Request::Builder" do
+        response = request.perform
+        expect(response.body).to eq("v6 response")
+      end
+    end
+
+    context "when basic_auth request option is provided" do
+      let(:request_options) { { basic_auth: { user: "user", pass: "password" } } }
+
+      it "sets Authorization header using keyword args (v6 path)" do
+        expect(request.headers).to include("Authorization" => "Basic dXNlcjpwYXNzd29yZA==")
+      end
+    end
+
+    context "when follow redirect" do
+      before do
+        request_stub.to_return(status: 302, headers: { "Location" => "http://redirect.me" })
+      end
+
+      let(:verb) { :get }
+      let(:request_options) { { follow: true } }
+
+      before do
+        stub_request(:get, /redirect\.me/)
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      it "follows redirect using HTTP::Redirector with keyword args" do
+        request.perform
+        expect(webmock_requests.size).to eq(2)
+      end
+    end
+  end
+end
+
+RSpec.describe EzClient::PersistentClient do
+  # NOTE: Exercises the httprb v6-specific code path in http_client by stubbing HTTP_GEM_V6.
+  context "when HTTP_GEM_V6 is true" do
+    before { stub_const("EzClient::HTTP_GEM_V6", true) }
+
+    it "creates HTTP::Client with persistent connection options" do
+      mock_client = double("HTTP::Client")
+      allow(HTTP::Client).to receive(:new)
+        .with(persistent: "http://example.com", keep_alive_timeout: 5)
+        .and_return(mock_client)
+
+      client = EzClient::PersistentClient.new("http://example.com", 5)
+      client.send(:http_client)
+
+      expect(HTTP::Client).to have_received(:new)
+        .with(persistent: "http://example.com", keep_alive_timeout: 5)
     end
   end
 end

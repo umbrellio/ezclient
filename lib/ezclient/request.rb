@@ -74,27 +74,43 @@ class EzClient::Request
   attr_accessor :client
 
   def http_request
-    @http_request ||= begin
-      opts = {}
+    @http_request ||=
+      if EzClient::HTTP_GEM_V6
+        # NOTE: build_request was removed from HTTP::Client in v6; use Request::Builder instead
+        merged = http_client.default_options.merge(build_request_opts)
+        HTTP::Request::Builder.new(merged).build(verb, url)
+      else
+        http_client.build_request(verb, url, build_request_opts)
+      end
+  end
 
-      opts[verb == "GET" ? :params : :form] = options[:params]
-      opts[:json] = options[:json] if options[:json]
-      opts[:body] = options[:body] if options[:body]
-      opts[:params] = options[:query] if options[:query]
-      opts[:form] = options[:form] if options[:form]
-      opts[:form] = prepare_form_params(opts[:form]) if opts[:form]
-      opts[:headers] = prepare_headers(options[:headers])
-
-      http_client.build_request(verb, url, opts)
-    end
+  def build_request_opts
+    opts = {}
+    opts[verb == "GET" ? :params : :form] = options[:params] if options[:params]
+    opts[:json] = options[:json] if options[:json]
+    opts[:body] = options[:body] if options[:body]
+    opts[:params] = options[:query] if options[:query]
+    opts[:form] = options[:form] if options[:form]
+    opts[:form] = prepare_form_params(opts[:form]) if opts[:form]
+    opts[:headers] = prepare_headers(options[:headers])
+    opts
   end
 
   def http_client
-    # Only used to build proper HTTP::Request and HTTP::Options instances
+    # NOTE: Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
       http_client = client.dup
       http_client = set_timeout(http_client)
-      http_client = http_client.basic_auth(basic_auth) if basic_auth
+      if basic_auth
+        # NOTE: In v6, basic_auth takes keyword args (user:, pass:);
+        # NOTE: in v4/v5 it takes a positional hash
+        http_client =
+          if EzClient::HTTP_GEM_V6
+            http_client.basic_auth(**basic_auth)
+          else
+            http_client.basic_auth(basic_auth)
+          end
+      end
       http_client = http_client.cookies(options[:cookies]) if options[:cookies]
       http_client
     end
@@ -103,13 +119,17 @@ class EzClient::Request
   def perform_request
     perform_started_at = EzClient.get_time
     with_retry do
-      # Use original client so that connection can be reused
+      # NOTE: Use original client so that connection can be reused
       res = client.perform(http_request, http_options)
       return res unless follow
 
-      HTTP::Redirector.new(follow).perform(http_request, res) do |request|
-        client.perform(request, http_options)
-      end
+      # NOTE: In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
+      redirector = if EzClient::HTTP_GEM_V6
+                     HTTP::Redirector.new(**follow)
+                   else
+                     HTTP::Redirector.new(follow)
+                   end
+      redirector.perform(http_request, res) { |req| client.perform(req, http_options) }
     end
   ensure
     self.elapsed_seconds = EzClient.get_time - perform_started_at
@@ -132,8 +152,8 @@ class EzClient::Request
   end
 
   def retry_on_connection_error
-    # This may result in 2 requests reaching the server so I hope HTTP fixes it
-    # https://github.com/httprb/http/issues/459
+    # NOTE: This may result in 2 requests reaching the server
+    # NOTE: https://github.com/httprb/http/issues/459
     yield
   rescue HTTP::ConnectionError => error
     on_retry.call(self, error, options[:metadata])
