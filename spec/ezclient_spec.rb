@@ -397,9 +397,9 @@ RSpec.describe EzClient do
     context "object inspectation" do
       specify "#inspect" do
         inspected = response.inspect.gsub(/0x\w+/, "0x0000")
-        # NOTE: HTTP::Response#inspect format changed between httprb v5 and v6:
-        # NOTE: v5: "#<HTTP::Response/1.1 201 Created {}>"  (shows headers as {})
-        # NOTE: v6: "#<HTTP::Response/1.1 201 Created >"    (shows mime_type, nil = empty)
+        # HTTP::Response#inspect format changed between httprb v5 and v6:
+        # v5: "#<HTTP::Response/1.1 201 Created {}>"  (shows headers as {})
+        # v6: "#<HTTP::Response/1.1 201 Created >"    (shows mime_type, nil = empty)
         expect(inspected).to include("#<EzClient::Response:0x0000")
         expect(inspected).to include("@http_response=#<HTTP::Response/1.1 201 Created")
         expect(inspected).to include("@http_request=#<HTTP::Request/1.1 POST http://example.com/>")
@@ -551,14 +551,14 @@ RSpec.describe EzClient do
     end
   end
 
-  # NOTE: The following contexts exercise httprb v6-specific code paths by stubbing
-  # NOTE: EzClient::HTTP_GEM_V6 = true, ensuring coverage even when running under httprb v5.
+  # The following contexts exercise httprb v6-specific code paths by stubbing
+  # EzClient::HTTP_GEM_V6 = true, ensuring coverage even when running under httprb v5.
   context "when HTTP_GEM_V6 is true (v6 code paths)" do
     before do
       stub_const("EzClient::HTTP_GEM_V6", true)
 
-      # NOTE: HTTP::Request::Builder doesn't exist in httprb v5; stub it to delegate
-      # NOTE: to the v5 build_request API so requests remain WebMock-compatible.
+      # HTTP::Request::Builder doesn't exist in httprb v5; stub it to delegate
+      # to the v5 build_request API so requests remain WebMock-compatible.
       stub_const("HTTP::Request::Builder", Class.new do
         def initialize(opts)
           @opts = opts
@@ -610,7 +610,7 @@ RSpec.describe EzClient do
 end
 
 RSpec.describe EzClient::PersistentClient do
-  # NOTE: Exercises the httprb v6-specific code path in http_client by stubbing HTTP_GEM_V6.
+  # Exercises the httprb v6-specific code path in http_client by stubbing HTTP_GEM_V6.
   context "when HTTP_GEM_V6 is true" do
     before { stub_const("EzClient::HTTP_GEM_V6", true) }
 

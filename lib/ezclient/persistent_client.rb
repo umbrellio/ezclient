@@ -28,11 +28,9 @@ class EzClient::PersistentClient
   def http_client
     @http_client ||=
       if EzClient::HTTP_GEM_V6
-        # NOTE: In v6, HTTP.persistent returns HTTP::Session (no #perform(req, opts)).
-        # NOTE: Instead, create an HTTP::Client directly with persistent connection options.
+        # In v6, HTTP.persistent returns HTTP::Session; use HTTP::Client directly instead
         HTTP::Client.new(persistent: origin, keep_alive_timeout: keep_alive_timeout)
       else
-        # NOTE: In v4/v5, HTTP.persistent returns HTTP::Client directly.
         HTTP.persistent(origin, timeout: keep_alive_timeout)
       end
   end

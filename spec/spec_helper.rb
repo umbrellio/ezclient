@@ -19,15 +19,15 @@ SimpleCov.start
 require "webmock/rspec"
 require "ezclient"
 
-# NOTE: WebMock (up to at least 3.24.0) has two incompatibilities with httprb v6:
+# WebMock (up to at least 3.24.0) has two incompatibilities with httprb v6:
 #
-# NOTE: 1. HTTP::Response.new changed from accepting a positional Hash to keyword arguments.
-# NOTE:    WebMock calls `new({status: ..., version: ..., ...})` which raises ArgumentError in v6.
+# 1. HTTP::Response.new changed from accepting a positional Hash to keyword arguments.
+#    WebMock calls `new({status: ..., version: ..., ...})` which raises ArgumentError in v6.
 #
-# NOTE: 2. HTTP::Response::Body#read_contents (and #readpartial) expect the underlying stream's
-# NOTE:    #readpartial to raise EOFError at end-of-stream (per the v6 IO#readpartial contract),
-# NOTE:    but WebMock's Streamer returns nil, causing TypeError: no implicit conversion of nil
-# NOTE:    into String.
+# 2. HTTP::Response::Body#read_contents (and #readpartial) expect the underlying stream's
+#    #readpartial to raise EOFError at end-of-stream (per the v6 IO#readpartial contract),
+#    but WebMock's Streamer returns nil, causing TypeError: no implicit conversion of nil
+#    into String.
 if EzClient::HTTP_GEM_V6
   module HTTP
     class Response
@@ -50,9 +50,7 @@ if EzClient::HTTP_GEM_V6
 
     class Response
       class Streamer
-        # NOTE: httprb v6 requires readpartial to raise EOFError at end-of-stream
-        # NOTE: (matching the IO#readpartial contract) instead of returning nil.
-        # NOTE: StringIO#read(nil) returns "" at EOF (not nil), so we must check eof? first.
+        # httprb v6 requires readpartial to raise EOFError at end-of-stream instead of returning nil
         def readpartial(size = nil, outbuf = nil)
           raise EOFError, "end of stream reached" if @io.eof?
 

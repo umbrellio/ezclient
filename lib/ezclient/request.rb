@@ -76,7 +76,7 @@ class EzClient::Request
   def http_request
     @http_request ||=
       if EzClient::HTTP_GEM_V6
-        # NOTE: build_request was removed from HTTP::Client in v6; use Request::Builder instead
+        # build_request was removed from HTTP::Client in v6; use Request::Builder instead
         merged = http_client.default_options.merge(build_request_opts)
         HTTP::Request::Builder.new(merged).build(verb, url)
       else
@@ -97,13 +97,11 @@ class EzClient::Request
   end
 
   def http_client
-    # NOTE: Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
       http_client = client.dup
       http_client = set_timeout(http_client)
       if basic_auth
-        # NOTE: In v6, basic_auth takes keyword args (user:, pass:);
-        # NOTE: in v4/v5 it takes a positional hash
+        # In v6, basic_auth takes keyword args (user:, pass:); in v4/v5 it takes a positional hash
         http_client =
           if EzClient::HTTP_GEM_V6
             http_client.basic_auth(**basic_auth)
@@ -119,11 +117,11 @@ class EzClient::Request
   def perform_request
     perform_started_at = EzClient.get_time
     with_retry do
-      # NOTE: Use original client so that connection can be reused
+      # Use original client so that connection can be reused
       res = client.perform(http_request, http_options)
       return res unless follow
 
-      # NOTE: In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
+      # In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
       redirector = if EzClient::HTTP_GEM_V6
                      HTTP::Redirector.new(**follow)
                    else
@@ -152,8 +150,8 @@ class EzClient::Request
   end
 
   def retry_on_connection_error
-    # NOTE: This may result in 2 requests reaching the server
-    # NOTE: https://github.com/httprb/http/issues/459
+    # This may result in 2 requests reaching the server so I hope HTTP fixes it
+    # https://github.com/httprb/http/issues/459
     yield
   rescue HTTP::ConnectionError => error
     on_retry.call(self, error, options[:metadata])
@@ -207,7 +205,6 @@ class EzClient::Request
   def prepare_form_params(original_params)
     params = {}
 
-    # NOTE: use Hash#transform_values after Ruby 2.3 support is dropped
     original_params.each do |key, value|
       params[key] =
         if value.is_a?(File)
