@@ -27,11 +27,11 @@ class EzClient::PersistentClient
 
   def http_client
     @http_client ||=
-      if EzClient::HTTP_GEM_V6
+      if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
+        HTTP.persistent(origin, timeout: keep_alive_timeout)
+      else
         # In v6, HTTP.persistent returns HTTP::Session; use HTTP::Client directly instead
         HTTP::Client.new(persistent: origin, keep_alive_timeout: keep_alive_timeout)
-      else
-        HTTP.persistent(origin, timeout: keep_alive_timeout)
       end
   end
 end

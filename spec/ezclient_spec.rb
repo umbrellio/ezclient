@@ -131,9 +131,8 @@ RSpec.describe EzClient do
         request.perform
 
         expect(webmock_requests.last.body).to eq('{"a":1}')
-        expect(webmock_requests.last.headers).to include(
-          "Content-Type" => "application/json; charset=utf-8",
-        )
+        expect(webmock_requests.last.headers["Content-Type"].downcase)
+          .to eq("application/json; charset=utf-8")
       end
     end
 
@@ -552,22 +551,22 @@ RSpec.describe EzClient do
   end
 
   # The following contexts exercise httprb v6-specific code paths by stubbing
-  # EzClient::HTTP_GEM_V6 = true, ensuring coverage even when running under httprb v5.
-  context "when HTTP_GEM_V6 is true (v6 code paths)" do
+  # HTTP::Client#build_request as unsupported, ensuring coverage even when running under httprb v5.
+  context "when HTTP::Client#build_request is unsupported" do
     before do
-      stub_const("EzClient::HTTP_GEM_V6", true)
+      stub_const("EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST", false)
 
-      # HTTP::Request::Builder doesn't exist in httprb v5; stub it to delegate
-      # to the v5 build_request API so requests remain WebMock-compatible.
-      stub_const("HTTP::Request::Builder", Class.new do
-        def initialize(opts)
-          @opts = opts
-        end
+      unless defined?(HTTP::Request::Builder)
+        stub_const("HTTP::Request::Builder", Class.new do
+          def initialize(opts)
+            @opts = opts
+          end
 
-        def build(verb, url)
-          HTTP::Client.new.build_request(verb, url, @opts)
-        end
-      end)
+          def build(verb, url)
+            HTTP::Client.new.build_request(verb, url, @opts)
+          end
+        end)
+      end
     end
 
     context "when making a basic request" do
@@ -610,9 +609,10 @@ RSpec.describe EzClient do
 end
 
 RSpec.describe EzClient::PersistentClient do
-  # Exercises the httprb v6-specific code path in http_client by stubbing HTTP_GEM_V6.
-  context "when HTTP_GEM_V6 is true" do
-    before { stub_const("EzClient::HTTP_GEM_V6", true) }
+  # Exercises the httprb v6-specific code path in http_client by stubbing
+  # build_request as unsupported.
+  context "when HTTP::Client#build_request is unsupported" do
+    before { stub_const("EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST", false) }
 
     it "creates HTTP::Client with persistent connection options" do
       mock_client = double("HTTP::Client")

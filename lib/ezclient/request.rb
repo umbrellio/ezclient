@@ -75,12 +75,12 @@ class EzClient::Request
 
   def http_request
     @http_request ||=
-      if EzClient::HTTP_GEM_V6
+      if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
+        http_client.build_request(verb, url, build_request_opts)
+      else
         # build_request was removed from HTTP::Client in v6; use Request::Builder instead
         merged = http_client.default_options.merge(build_request_opts)
         HTTP::Request::Builder.new(merged).build(verb, url)
-      else
-        http_client.build_request(verb, url, build_request_opts)
       end
   end
 
@@ -103,10 +103,10 @@ class EzClient::Request
       if basic_auth
         # In v6, basic_auth takes keyword args (user:, pass:); in v4/v5 it takes a positional hash
         http_client =
-          if EzClient::HTTP_GEM_V6
-            http_client.basic_auth(**basic_auth)
-          else
+          if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
             http_client.basic_auth(basic_auth)
+          else
+            http_client.basic_auth(**basic_auth)
           end
       end
       http_client = http_client.cookies(options[:cookies]) if options[:cookies]
@@ -122,10 +122,10 @@ class EzClient::Request
       return res unless follow
 
       # In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
-      redirector = if EzClient::HTTP_GEM_V6
-                     HTTP::Redirector.new(**follow)
-                   else
+      redirector = if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
                      HTTP::Redirector.new(follow)
+                   else
+                     HTTP::Redirector.new(**follow)
                    end
       redirector.perform(http_request, res) { |req| client.perform(req, http_options) }
     end

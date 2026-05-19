@@ -12,7 +12,7 @@ require_relative "ezclient/errors"
 require_relative "ezclient/check_options"
 
 module EzClient
-  HTTP_GEM_V6 = Gem::Version.new(HTTP::VERSION) >= Gem::Version.new("6.0.0")
+  HTTP_CLIENT_SUPPORTS_BUILD_REQUEST = HTTP::Client.method_defined?(:build_request)
 
   def self.new(*args)
     Client.new(*args)

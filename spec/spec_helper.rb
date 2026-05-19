@@ -28,7 +28,7 @@ require "ezclient"
 #    #readpartial to raise EOFError at end-of-stream (per the v6 IO#readpartial contract),
 #    but WebMock's Streamer returns nil, causing TypeError: no implicit conversion of nil
 #    into String.
-if EzClient::HTTP_GEM_V6
+unless EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
   module HTTP
     class Response
       class << self
