@@ -121,16 +121,81 @@ class EzClient::Request
       res = client.perform(http_request, http_options)
       return res unless follow
 
-      # In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
-      redirector = if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
-                     HTTP::Redirector.new(follow)
-                   else
-                     HTTP::Redirector.new(**follow)
-                   end
-      redirector.perform(http_request, res) { |req| client.perform(req, http_options) }
+      perform_redirects(res)
     end
   ensure
     self.elapsed_seconds = EzClient.get_time - perform_started_at
+  end
+
+  def perform_redirects(response)
+    if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
+      redirector(follow).perform(http_request, response) { |req| client.perform(req, http_options) }
+    else
+      perform_redirects_with_cookies(response)
+    end
+  end
+
+  def perform_redirects_with_cookies(response)
+    cookie_jar = HTTP::CookieJar.new
+    store_request_cookies(cookie_jar, http_request)
+    store_response_cookies(cookie_jar, response)
+
+    applied_redirects = {}.compare_by_identity
+    options = follow
+    options = options.merge(
+      on_redirect: redirect_callback(cookie_jar, options[:on_redirect], applied_redirects),
+    )
+
+    redirector(options).perform(http_request, response) do |req|
+      apply_cookies(cookie_jar, req) unless applied_redirects.delete(req)
+      client.perform(req, http_options).tap do |res|
+        store_response_cookies(cookie_jar, res)
+      end
+    end
+  end
+
+  def redirector(options)
+    # In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
+    if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
+      HTTP::Redirector.new(options)
+    else
+      HTTP::Redirector.new(**options)
+    end
+  end
+
+  def redirect_callback(cookie_jar, callback, applied_redirects)
+    proc do |response, request|
+      apply_cookies(cookie_jar, request)
+      applied_redirects[request] = true
+      callback&.call(response, request)
+    end
+  end
+
+  def store_request_cookies(cookie_jar, request)
+    header = request.headers[HTTP::Headers::COOKIE].to_s
+
+    HTTP::Cookie.cookie_value_to_hash(header).each do |name, value|
+      cookie_jar.add(HTTP::Cookie.new(name, value, path: request.uri.path, domain: request.host))
+    end
+  end
+
+  def store_response_cookies(cookie_jar, response)
+    response.cookies.each do |cookie|
+      if cookie.value == ""
+        cookie_jar.delete(cookie)
+      else
+        cookie_jar.add(cookie)
+      end
+    end
+  end
+
+  def apply_cookies(cookie_jar, request)
+    if cookie_jar.empty?
+      request.headers.delete(HTTP::Headers::COOKIE)
+    else
+      cookies = cookie_jar.map { |cookie| "#{cookie.name}=#{cookie.value}" }.join("; ")
+      request.headers.set(HTTP::Headers::COOKIE, cookies)
+    end
   end
 
   def with_retry(&block)

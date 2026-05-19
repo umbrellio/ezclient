@@ -605,6 +605,27 @@ RSpec.describe EzClient do
         expect(webmock_requests.size).to eq(2)
       end
     end
+
+    context "when followed redirect sets cookies" do
+      before do
+        request_stub.to_return(
+          status: 302,
+          headers: { "Location" => "http://example.com/redirected", "Set-Cookie" => "sid=1" },
+        )
+
+        stub_request(:get, "http://example.com/redirected")
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      let(:verb) { :get }
+      let(:request_options) { { follow: true } }
+
+      it "sends response cookies to the next request" do
+        request.perform
+        expect(webmock_requests.last.headers).to include("Cookie" => "sid=1")
+      end
+    end
   end
 end
 
