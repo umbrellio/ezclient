@@ -369,6 +369,33 @@ RSpec.describe EzClient do
 
       expect(request.headers).to include("Authorization" => "some-hash-here")
     end
+
+    context "when HTTP::Request does not expose header accessors" do
+      let(:client_options) { {} }
+      let(:http_request) { Struct.new(:headers).new(HTTP::Headers.new) }
+
+      before do
+        def http_request.respond_to?(name, *args)
+          return false if %i[[] []=].include?(name)
+
+          super
+        end
+
+        allow(request).to receive(:http_request).and_return(http_request)
+      end
+
+      it "adds api-auth-compatible header accessors" do
+        expect(ApiAuth).to receive(:sign!) do |signed_request, access_id, access_key|
+          expect(access_id).to eq("id")
+          expect(access_key).to eq("secret")
+          signed_request["Authorization"] = "some-hash-here"
+        end
+
+        request.api_auth!("id", "secret")
+
+        expect(http_request.headers.to_h).to include("Authorization" => "some-hash-here")
+      end
+    end
   end
 
   context "when unknown client option is passed" do

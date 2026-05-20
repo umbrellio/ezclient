@@ -43,7 +43,8 @@ class EzClient::Request
 
   def api_auth!(*args)
     raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
-    ApiAuth.sign!(http_request, *args)
+
+    ApiAuth.sign!(api_auth_request, *args)
     self
   end
 
@@ -72,6 +73,19 @@ class EzClient::Request
   private
 
   attr_accessor :client
+
+  def api_auth_request
+    http_request.tap { |request| define_api_auth_header_accessors(request) }
+  end
+
+  def define_api_auth_header_accessors(request)
+    # api-auth 2.x expects HTTP::Request to expose header accessors that were removed in httprb 6.
+    request.define_singleton_method(:[]) { |key| headers[key] } unless request.respond_to?(:[])
+
+    return if request.respond_to?(:[]=)
+
+    request.define_singleton_method(:[]=) { |key, value| headers[key] = value }
+  end
 
   def http_request
     @http_request ||=
