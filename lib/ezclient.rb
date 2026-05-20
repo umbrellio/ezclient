@@ -3,6 +3,7 @@
 require "http"
 
 require_relative "ezclient/version"
+require_relative "ezclient/httprb_compatibility"
 require_relative "ezclient/client"
 require_relative "ezclient/persistent_client"
 require_relative "ezclient/persistent_client_registry"
@@ -12,7 +13,7 @@ require_relative "ezclient/errors"
 require_relative "ezclient/check_options"
 
 module EzClient
-  HTTP_CLIENT_SUPPORTS_BUILD_REQUEST = HTTP::Client.method_defined?(:build_request)
+  HTTP_CLIENT_SUPPORTS_BUILD_REQUEST = HttprbCompatibility.client_supports_build_request?
 
   def self.new(*args)
     Client.new(*args)

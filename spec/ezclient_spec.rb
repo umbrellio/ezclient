@@ -239,6 +239,19 @@ RSpec.describe EzClient do
         response = request.perform!
         expect(response.body).to eq("some body")
       end
+
+      context "when basic_auth and cookies are provided" do
+        let(:request_options) { { basic_auth: %w[user password], cookies: { a: 1 } } }
+
+        it "uses them while building a persistent request" do
+          request.perform
+
+          expect(webmock_requests.last.headers).to include(
+            "Authorization" => "Basic dXNlcjpwYXNzd29yZA==",
+            "Cookie" => "a=1",
+          )
+        end
+      end
     end
   end
 
@@ -375,12 +388,9 @@ RSpec.describe EzClient do
       let(:http_request) { Struct.new(:headers).new(HTTP::Headers.new) }
 
       before do
-        def http_request.respond_to?(name, *args)
-          return false if %i[[] []=].include?(name)
-
-          super
-        end
-
+        allow(http_request).to receive(:respond_to?).and_call_original
+        allow(http_request).to receive(:respond_to?).with(:[]).and_return(false)
+        allow(http_request).to receive(:respond_to?).with(:[]=).and_return(false)
         allow(request).to receive(:http_request).and_return(http_request)
       end
 
@@ -581,7 +591,9 @@ RSpec.describe EzClient do
   # HTTP::Client#build_request as unsupported, ensuring coverage even when running under httprb v5.
   context "when HTTP::Client#build_request is unsupported" do
     before do
-      stub_const("EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST", false)
+      allow(EzClient::HttprbCompatibility)
+        .to receive(:client_supports_build_request?)
+        .and_return(false)
 
       unless defined?(HTTP::Request::Builder)
         stub_const("HTTP::Request::Builder", Class.new do
@@ -653,6 +665,183 @@ RSpec.describe EzClient do
         expect(webmock_requests.last.headers).to include("Cookie" => "sid=1")
       end
     end
+
+    context "when redirected request has cookies" do
+      before do
+        request_stub.to_return(
+          status: 302,
+          headers: { "Location" => "http://example.com/redirected" },
+        )
+
+        stub_request(:get, "http://example.com/redirected")
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      let(:verb) { :get }
+      let(:request_options) { { cookies: { sid: 1 }, follow: true } }
+
+      it "sends original request cookies to the next request" do
+        request.perform
+        expect(webmock_requests.last.headers).to include("Cookie" => "sid=1")
+      end
+    end
+
+    context "when redirect response expires cookies" do
+      before do
+        request_stub.to_return(
+          status: 302,
+          headers: {
+            "Location" => "http://example.com/redirected",
+            "Set-Cookie" => "sid=; Path=/",
+          },
+        )
+
+        stub_request(:get, "http://example.com/redirected")
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      let(:verb) { :get }
+      let(:request_options) { { cookies: { sid: 1 }, follow: true } }
+
+      it "removes expired cookies from the next request" do
+        request.perform
+        expect(webmock_requests.last.headers).not_to include("Cookie")
+      end
+    end
+  end
+end
+
+RSpec.describe EzClient::HttprbCompatibility do
+  context "when basic auth expects keyword arguments" do
+    let(:client_class) do
+      Class.new do
+        attr_reader :credentials
+
+        def basic_auth(user:, pass:)
+          @credentials = { user: user, pass: pass }
+          self
+        end
+      end
+    end
+
+    let(:client) { client_class.new }
+
+    it "passes credentials as keyword arguments" do
+      expect(described_class.basic_auth(client, { user: "user", pass: "password" })).to eq(client)
+      expect(client.credentials).to eq(user: "user", pass: "password")
+    end
+  end
+
+  context "when redirector expects keyword arguments" do
+    let(:redirector_class) do
+      Class.new do
+        attr_reader :options
+
+        def initialize(max_hops:)
+          @options = { max_hops: max_hops }
+        end
+      end
+    end
+
+    before do
+      stub_const("HTTP::Redirector", redirector_class)
+    end
+
+    it "passes options as keyword arguments" do
+      expect(described_class.redirector(max_hops: 3).options).to eq(max_hops: 3)
+    end
+  end
+
+  context "when response expects keyword arguments" do
+    let(:response_class) do
+      Class.new do
+        attr_reader :attributes
+
+        def initialize(status:, headers:)
+          @attributes = { status: status, headers: headers }
+        end
+      end
+    end
+
+    before do
+      stub_const("HTTP::Response", response_class)
+    end
+
+    it "passes attributes as keyword arguments" do
+      expect(described_class.response(status: 200, headers: {}).attributes)
+        .to eq(status: 200, headers: {})
+    end
+  end
+
+  context "when response expects positional hash" do
+    let(:response_class) do
+      Class.new do
+        attr_reader :attributes
+
+        def initialize(attributes)
+          @attributes = attributes
+        end
+      end
+    end
+
+    before do
+      stub_const("HTTP::Response", response_class)
+    end
+
+    it "passes attributes as a positional hash" do
+      expect(described_class.response(status: 200, headers: {}).attributes)
+        .to eq(status: 200, headers: {})
+    end
+  end
+
+  context "when legacy hash initializer is installed" do
+    let(:response_class) do
+      Class.new do
+        attr_reader :attributes
+
+        def initialize(status:, headers:)
+          @attributes = { status: status, headers: headers }
+        end
+      end
+    end
+
+    before do
+      described_class.install_legacy_hash_initializer!(response_class)
+      described_class.install_legacy_hash_initializer!(response_class)
+    end
+
+    it "allows keyword-only initializers to accept a legacy positional hash" do
+      expect(response_class.new({ status: 200, headers: {} }).attributes)
+        .to eq(status: 200, headers: {})
+      expect(response_class.new(status: 201, headers: { "X-Test" => "1" }).attributes)
+        .to eq(status: 201, headers: { "X-Test" => "1" })
+    end
+  end
+
+  context "when legacy header accessors are installed" do
+    let(:request_class) do
+      Class.new do
+        attr_reader :headers
+
+        def initialize
+          @headers = {}
+        end
+      end
+    end
+
+    let(:request) { request_class.new }
+
+    before do
+      described_class.install_legacy_header_accessors!(request_class)
+    end
+
+    it "adds hash-like header accessors" do
+      request["Authorization"] = "token"
+
+      expect(request["Authorization"]).to eq("token")
+    end
   end
 end
 
@@ -660,7 +849,11 @@ RSpec.describe EzClient::PersistentClient do
   # Exercises the httprb v6-specific code path in http_client by stubbing
   # build_request as unsupported.
   context "when HTTP::Client#build_request is unsupported" do
-    before { stub_const("EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST", false) }
+    before do
+      allow(EzClient::HttprbCompatibility)
+        .to receive(:client_supports_build_request?)
+        .and_return(false)
+    end
 
     it "creates HTTP::Client with persistent connection options" do
       mock_client = double("HTTP::Client")

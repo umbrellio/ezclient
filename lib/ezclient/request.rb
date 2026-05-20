@@ -88,14 +88,12 @@ class EzClient::Request
   end
 
   def http_request
-    @http_request ||=
-      if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
-        http_client.build_request(verb, url, build_request_opts)
-      else
-        # build_request was removed from HTTP::Client in v6; use Request::Builder instead
-        merged = http_client.default_options.merge(build_request_opts)
-        HTTP::Request::Builder.new(merged).build(verb, url)
-      end
+    @http_request ||= EzClient::HttprbCompatibility.build_request(
+      http_client,
+      verb,
+      url,
+      build_request_opts,
+    )
   end
 
   def build_request_opts
@@ -114,15 +112,7 @@ class EzClient::Request
     @http_client ||= begin
       http_client = client.dup
       http_client = set_timeout(http_client)
-      if basic_auth
-        # In v6, basic_auth takes keyword args (user:, pass:); in v4/v5 it takes a positional hash
-        http_client =
-          if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
-            http_client.basic_auth(basic_auth)
-          else
-            http_client.basic_auth(**basic_auth)
-          end
-      end
+      http_client = EzClient::HttprbCompatibility.basic_auth(http_client, basic_auth) if basic_auth
       http_client = http_client.cookies(options[:cookies]) if options[:cookies]
       http_client
     end
@@ -142,7 +132,7 @@ class EzClient::Request
   end
 
   def perform_redirects(response)
-    if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
+    if EzClient::HttprbCompatibility.client_supports_build_request?
       redirector(follow).perform(http_request, response) { |req| client.perform(req, http_options) }
     else
       perform_redirects_with_cookies(response)
@@ -169,12 +159,7 @@ class EzClient::Request
   end
 
   def redirector(options)
-    # In v6, Redirector.new takes keyword args; in v4/v5 it takes a positional hash
-    if EzClient::HTTP_CLIENT_SUPPORTS_BUILD_REQUEST
-      HTTP::Redirector.new(options)
-    else
-      HTTP::Redirector.new(**options)
-    end
+    EzClient::HttprbCompatibility.redirector(options)
   end
 
   def redirect_callback(cookie_jar, callback, applied_redirects)
