@@ -141,19 +141,20 @@ class EzClient::Request
 
   def perform_redirects_with_cookies(response)
     cookie_jar = HTTP::CookieJar.new
-    store_request_cookies(cookie_jar, http_request)
-    store_response_cookies(cookie_jar, response)
+    expired_cookie_names = []
+    store_response_cookies(cookie_jar, response, expired_cookie_names)
 
-    applied_redirects = {}.compare_by_identity
-    options = follow
-    options = options.merge(
-      on_redirect: redirect_callback(cookie_jar, options[:on_redirect], applied_redirects),
-    )
+    redirect_opts = follow.dup
+    on_redirect = redirect_opts.delete(:on_redirect)
+    redirect_response = response
 
-    redirector(options).perform(http_request, response) do |req|
-      apply_cookies(cookie_jar, req) unless applied_redirects.delete(req)
+    redirector(redirect_opts).perform(http_request, response) do |req|
+      apply_cookies(cookie_jar, req, expired_cookie_names)
+      on_redirect&.call(redirect_response, req)
+
       client.perform(req, http_options).tap do |res|
-        store_response_cookies(cookie_jar, res)
+        store_response_cookies(cookie_jar, res, expired_cookie_names)
+        redirect_response = res
       end
     end
   end
@@ -162,39 +163,38 @@ class EzClient::Request
     EzClient::HttprbCompatibility.redirector(options)
   end
 
-  def redirect_callback(cookie_jar, callback, applied_redirects)
-    proc do |response, request|
-      apply_cookies(cookie_jar, request)
-      applied_redirects[request] = true
-      callback&.call(response, request)
-    end
-  end
-
-  def store_request_cookies(cookie_jar, request)
-    header = request.headers[HTTP::Headers::COOKIE].to_s
-
-    HTTP::Cookie.cookie_value_to_hash(header).each do |name, value|
-      cookie_jar.add(HTTP::Cookie.new(name, value, path: request.uri.path, domain: request.host))
-    end
-  end
-
-  def store_response_cookies(cookie_jar, response)
-    response.cookies.each do |cookie|
-      if cookie.value == ""
-        cookie_jar.delete(cookie)
-      else
+  def store_response_cookies(cookie_jar, response, expired_cookie_names)
+    response.headers.get(HTTP::Headers::SET_COOKIE).each do |set_cookie|
+      HTTP::Cookie.parse(set_cookie, response.request.uri).each do |cookie|
+        expired_cookie_names << cookie.name if cookie.expired?
         cookie_jar.add(cookie)
       end
     end
   end
 
-  def apply_cookies(cookie_jar, request)
-    if cookie_jar.empty?
+  def apply_cookies(cookie_jar, request, expired_cookie_names)
+    cookies = cookie_header_for(cookie_jar, request, expired_cookie_names)
+
+    if cookies.empty?
       request.headers.delete(HTTP::Headers::COOKIE)
     else
-      cookies = cookie_jar.map { |cookie| "#{cookie.name}=#{cookie.value}" }.join("; ")
       request.headers.set(HTTP::Headers::COOKIE, cookies)
     end
+  end
+
+  def cookie_header_for(cookie_jar, request, expired_cookie_names)
+    response_cookies = cookie_jar.cookies(request.uri)
+    excluded_names = expired_cookie_names | response_cookies.map(&:name)
+
+    cookie_values = request_cookie_values(request, excluded_names)
+    cookie_values.concat(response_cookies.map(&:cookie_value)).join("; ")
+  end
+
+  def request_cookie_values(request, excluded_names)
+    HTTP::Cookie.cookie_value_to_hash(request.headers[HTTP::Headers::COOKIE].to_s)
+      .except(*excluded_names)
+      .map { |name, value| HTTP::Cookie.new(name, value, domain: "example.com", path: "/") }
+      .map(&:cookie_value)
   end
 
   def with_retry(&block)

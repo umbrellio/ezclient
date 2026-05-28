@@ -666,6 +666,34 @@ RSpec.describe EzClient do
       end
     end
 
+    context "when follow redirect has on_redirect callback" do
+      let(:verb) { :get }
+      let(:calls) { [] }
+      let(:request_options) { { follow: { on_redirect: on_redirect } } }
+
+      let(:on_redirect) do
+        proc do |response, redirect_request|
+          calls << [response.code, redirect_request.headers[HTTP::Headers::COOKIE].to_s]
+        end
+      end
+
+      before do
+        request_stub.to_return(
+          status: 302,
+          headers: { "Location" => "http://example.com/redirected", "Set-Cookie" => "sid=1" },
+        )
+
+        stub_request(:get, "http://example.com/redirected")
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      it "calls it with the response and redirected request after applying cookies" do
+        request.perform
+        expect(calls).to eq([[302, "sid=1"]])
+      end
+    end
+
     context "when redirected request has cookies" do
       before do
         request_stub.to_return(
@@ -687,13 +715,37 @@ RSpec.describe EzClient do
       end
     end
 
-    context "when redirect response expires cookies" do
+    context "when redirect response sets an empty cookie" do
       before do
         request_stub.to_return(
           status: 302,
           headers: {
             "Location" => "http://example.com/redirected",
             "Set-Cookie" => "sid=; Path=/",
+          },
+        )
+
+        stub_request(:get, "http://example.com/redirected")
+          .with { |req| webmock_requests << req }
+          .to_return(body: "redirected")
+      end
+
+      let(:verb) { :get }
+      let(:request_options) { { follow: true } }
+
+      it "preserves it as a legitimate cookie value" do
+        request.perform
+        expect(webmock_requests.last.headers).to include("Cookie" => "sid=")
+      end
+    end
+
+    context "when redirect response expires cookies" do
+      before do
+        request_stub.to_return(
+          status: 302,
+          headers: {
+            "Location" => "http://example.com/redirected",
+            "Set-Cookie" => "sid=; Max-Age=0; Path=/",
           },
         )
 
@@ -793,54 +845,6 @@ RSpec.describe EzClient::HttprbCompatibility do
     it "passes attributes as a positional hash" do
       expect(described_class.response(status: 200, headers: {}).attributes)
         .to eq(status: 200, headers: {})
-    end
-  end
-
-  context "when legacy hash initializer is installed" do
-    let(:response_class) do
-      Class.new do
-        attr_reader :attributes
-
-        def initialize(status:, headers:)
-          @attributes = { status: status, headers: headers }
-        end
-      end
-    end
-
-    before do
-      described_class.install_legacy_hash_initializer!(response_class)
-      described_class.install_legacy_hash_initializer!(response_class)
-    end
-
-    it "allows keyword-only initializers to accept a legacy positional hash" do
-      expect(response_class.new({ status: 200, headers: {} }).attributes)
-        .to eq(status: 200, headers: {})
-      expect(response_class.new(status: 201, headers: { "X-Test" => "1" }).attributes)
-        .to eq(status: 201, headers: { "X-Test" => "1" })
-    end
-  end
-
-  context "when legacy header accessors are installed" do
-    let(:request_class) do
-      Class.new do
-        attr_reader :headers
-
-        def initialize
-          @headers = {}
-        end
-      end
-    end
-
-    let(:request) { request_class.new }
-
-    before do
-      described_class.install_legacy_header_accessors!(request_class)
-    end
-
-    it "adds hash-like header accessors" do
-      request["Authorization"] = "token"
-
-      expect(request["Authorization"]).to eq("token")
     end
   end
 end

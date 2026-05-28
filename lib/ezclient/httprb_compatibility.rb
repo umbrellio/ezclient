@@ -5,19 +5,11 @@ module EzClient::HttprbCompatibility
 
   module_function
 
-  def install!
-    install_legacy_hash_initializer!(HTTP::Response)
-    install_legacy_hash_initializer!(HTTP::Request)
-    install_legacy_hash_initializer!(HTTP::Redirector)
-    install_legacy_header_accessors!(HTTP::Response)
-    install_legacy_header_accessors!(HTTP::Request)
-  end
-
   def client_supports_build_request?
     HTTP::Client.method_defined?(:build_request)
   end
 
-  def response_body_requires_eof_error?
+  def httprb_v6_or_later?
     Gem::Version.new(HTTP::VERSION) >= Gem::Version.new("6")
   end
 
@@ -64,39 +56,4 @@ module EzClient::HttprbCompatibility
   def keyword_initializer?(method)
     method.parameters.any? { |type, _name| KEYWORD_PARAMETER_TYPES.include?(type) }
   end
-
-  def install_legacy_hash_initializer!(klass)
-    return unless keyword_initializer?(klass.instance_method(:initialize))
-    return if klass < LegacyHashInitializer
-
-    klass.prepend(LegacyHashInitializer)
-  end
-
-  def install_legacy_header_accessors!(klass)
-    return if klass.method_defined?(:[]) && klass.method_defined?(:[]=)
-
-    klass.include(LegacyHeaderAccessors)
-  end
-
-  module LegacyHashInitializer
-    def initialize(*args, **kwargs)
-      if kwargs.empty? && args.size == 1 && args.first.respond_to?(:to_hash)
-        super(**args.first.to_hash)
-      else
-        super
-      end
-    end
-  end
-
-  module LegacyHeaderAccessors
-    def [](key)
-      headers[key]
-    end
-
-    def []=(key, value)
-      headers[key] = value
-    end
-  end
 end
-
-EzClient::HttprbCompatibility.install!

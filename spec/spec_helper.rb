@@ -19,7 +19,9 @@ SimpleCov.start
 require "webmock/rspec"
 require "ezclient"
 
-# WebMock (up to at least 3.24.0) has two incompatibilities with httprb v6:
+# WebMock (up to at least 3.24.0) has two incompatibilities with httprb v6.
+# Remove after upgrading to a WebMock version that includes:
+# https://github.com/bblimke/webmock/pull/1123
 #
 # 1. HTTP::Response.new changed from accepting a positional Hash to keyword arguments.
 #    WebMock calls `new({status: ..., version: ..., ...})` which raises ArgumentError in v6.
@@ -28,7 +30,7 @@ require "ezclient"
 #    #readpartial to raise EOFError at end-of-stream (per the v6 IO#readpartial contract),
 #    but WebMock's Streamer returns nil, causing TypeError: no implicit conversion of nil
 #    into String.
-if EzClient::HttprbCompatibility.response_body_requires_eof_error?
+if EzClient::HttprbCompatibility.httprb_v6_or_later?
   module HTTP
     class Response
       class << self

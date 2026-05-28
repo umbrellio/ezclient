@@ -13,8 +13,6 @@ require_relative "ezclient/errors"
 require_relative "ezclient/check_options"
 
 module EzClient
-  HTTP_CLIENT_SUPPORTS_BUILD_REQUEST = HttprbCompatibility.client_supports_build_request?
-
   def self.new(*args)
     Client.new(*args)
   end
