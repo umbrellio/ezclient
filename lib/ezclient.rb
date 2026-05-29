@@ -3,6 +3,7 @@
 require "http"
 
 require_relative "ezclient/version"
+require_relative "ezclient/httprb_compatibility"
 require_relative "ezclient/client"
 require_relative "ezclient/persistent_client"
 require_relative "ezclient/persistent_client_registry"

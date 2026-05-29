@@ -19,6 +19,53 @@ SimpleCov.start
 require "webmock/rspec"
 require "ezclient"
 
+# WebMock (up to at least 3.24.0) has two incompatibilities with httprb v6.
+# Remove after upgrading to a WebMock version that includes:
+# https://github.com/bblimke/webmock/pull/1123
+#
+# 1. HTTP::Response.new changed from accepting a positional Hash to keyword arguments.
+#    WebMock calls `new({status: ..., version: ..., ...})` which raises ArgumentError in v6.
+#
+# 2. HTTP::Response::Body#read_contents (and #readpartial) expect the underlying stream's
+#    #readpartial to raise EOFError at end-of-stream (per the v6 IO#readpartial contract),
+#    but WebMock's Streamer returns nil, causing TypeError: no implicit conversion of nil
+#    into String.
+if EzClient::HttprbCompatibility.httprb_v6_or_later?
+  module HTTP
+    class Response
+      class << self
+        def from_webmock(request, webmock_response, _request_signature = nil)
+          status  = Status.new(webmock_response.status.first)
+          headers = webmock_response.headers || {}
+          body    = build_http_rb_response_body_from_webmock_response(webmock_response)
+
+          EzClient::HttprbCompatibility.response(
+            status: status,
+            version: "1.1",
+            headers: headers,
+            body: body,
+            request: request,
+          )
+        end
+      end
+    end
+
+    class Response
+      class Streamer
+        # httprb v6 requires readpartial to raise EOFError at end-of-stream instead of returning nil
+        def readpartial(size = nil, outbuf = nil)
+          raise EOFError, "end of stream reached" if @io.eof?
+
+          chunk = size ? @io.read(size, outbuf) : @io.read
+          raise EOFError, "end of stream reached" if chunk.nil?
+
+          chunk.force_encoding(@encoding)
+        end
+      end
+    end
+  end
+end
+
 RSpec.configure do |config|
   config.order = :random
   Kernel.srand config.seed

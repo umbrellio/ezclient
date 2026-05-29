@@ -10,6 +10,51 @@ class EzClient::Request
     query
   ].freeze
 
+  class RedirectCookieState
+    def initialize(response)
+      self.cookie_jar = HTTP::CookieJar.new
+      self.expired_cookie_names = []
+      store(response)
+    end
+
+    def store(response)
+      response.headers.get(HTTP::Headers::SET_COOKIE).each do |set_cookie|
+        HTTP::Cookie.parse(set_cookie, response.request.uri).each do |cookie|
+          expired_cookie_names << cookie.name if cookie.expired?
+          cookie_jar.add(cookie)
+        end
+      end
+    end
+
+    def apply_to(request)
+      cookies = cookie_header_for(request)
+
+      if cookies.empty?
+        request.headers.delete(HTTP::Headers::COOKIE)
+      else
+        request.headers.set(HTTP::Headers::COOKIE, cookies)
+      end
+    end
+
+    private
+
+    attr_accessor :cookie_jar, :expired_cookie_names
+
+    def cookie_header_for(request)
+      response_cookies = cookie_jar.cookies(request.uri)
+      excluded_names = expired_cookie_names | response_cookies.map(&:name)
+
+      cookie_values = request_cookie_values(request, excluded_names)
+      cookie_values.concat(response_cookies.map(&:cookie_value)).join("; ")
+    end
+
+    def request_cookie_values(request, excluded_names)
+      HTTP::Cookie.cookie_value_to_hash(request.headers[HTTP::Headers::COOKIE].to_s)
+        .except(*excluded_names)
+        .map { |name, value| "#{name}=#{HTTP::Cookie::Scanner.quote(value)}" }
+    end
+  end
+
   attr_accessor :verb, :url, :options, :elapsed_seconds
 
   def initialize(verb, url, options)
@@ -43,7 +88,8 @@ class EzClient::Request
 
   def api_auth!(*args)
     raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
-    ApiAuth.sign!(http_request, *args)
+
+    ApiAuth.sign!(api_auth_request, *args)
     self
   end
 
@@ -73,28 +119,45 @@ class EzClient::Request
 
   attr_accessor :client
 
+  def api_auth_request
+    http_request.tap { |request| define_api_auth_header_accessors(request) }
+  end
+
+  def define_api_auth_header_accessors(request)
+    # api-auth 2.x expects HTTP::Request to expose header accessors that were removed in httprb 6.
+    request.define_singleton_method(:[]) { |key| headers[key] } unless request.respond_to?(:[])
+
+    return if request.respond_to?(:[]=)
+
+    request.define_singleton_method(:[]=) { |key, value| headers[key] = value }
+  end
+
   def http_request
-    @http_request ||= begin
-      opts = {}
+    @http_request ||= EzClient::HttprbCompatibility.build_request(
+      http_client,
+      verb,
+      url,
+      build_request_opts,
+    )
+  end
 
-      opts[verb == "GET" ? :params : :form] = options[:params]
-      opts[:json] = options[:json] if options[:json]
-      opts[:body] = options[:body] if options[:body]
-      opts[:params] = options[:query] if options[:query]
-      opts[:form] = options[:form] if options[:form]
-      opts[:form] = prepare_form_params(opts[:form]) if opts[:form]
-      opts[:headers] = prepare_headers(options[:headers])
-
-      http_client.build_request(verb, url, opts)
-    end
+  def build_request_opts
+    opts = {}
+    opts[verb == "GET" ? :params : :form] = options[:params] if options[:params]
+    opts[:json] = options[:json] if options[:json]
+    opts[:body] = options[:body] if options[:body]
+    opts[:params] = options[:query] if options[:query]
+    opts[:form] = options[:form] if options[:form]
+    opts[:form] = prepare_form_params(opts[:form]) if opts[:form]
+    opts[:headers] = prepare_headers(options[:headers])
+    opts
   end
 
   def http_client
-    # Only used to build proper HTTP::Request and HTTP::Options instances
     @http_client ||= begin
       http_client = client.dup
       http_client = set_timeout(http_client)
-      http_client = http_client.basic_auth(basic_auth) if basic_auth
+      http_client = EzClient::HttprbCompatibility.basic_auth(http_client, basic_auth) if basic_auth
       http_client = http_client.cookies(options[:cookies]) if options[:cookies]
       http_client
     end
@@ -107,12 +170,39 @@ class EzClient::Request
       res = client.perform(http_request, http_options)
       return res unless follow
 
-      HTTP::Redirector.new(follow).perform(http_request, res) do |request|
-        client.perform(request, http_options)
-      end
+      perform_redirects(res)
     end
   ensure
     self.elapsed_seconds = EzClient.get_time - perform_started_at
+  end
+
+  def perform_redirects(response)
+    if EzClient::HttprbCompatibility.client_supports_build_request?
+      redirector(follow).perform(http_request, response) { |req| client.perform(req, http_options) }
+    else
+      perform_redirects_with_cookies(response)
+    end
+  end
+
+  def perform_redirects_with_cookies(response)
+    cookie_state = RedirectCookieState.new(response)
+    redirect_opts = follow.dup
+    on_redirect = redirect_opts.delete(:on_redirect)
+    redirect_response = response
+
+    redirector(redirect_opts).perform(http_request, response) do |req|
+      cookie_state.apply_to(req)
+      on_redirect&.call(redirect_response, req)
+
+      client.perform(req, http_options).tap do |res|
+        cookie_state.store(res)
+        redirect_response = res
+      end
+    end
+  end
+
+  def redirector(options)
+    EzClient::HttprbCompatibility.redirector(options)
   end
 
   def with_retry(&block)
@@ -187,7 +277,6 @@ class EzClient::Request
   def prepare_form_params(original_params)
     params = {}
 
-    # NOTE: use Hash#transform_values after Ruby 2.3 support is dropped
     original_params.each do |key, value|
       params[key] =
         if value.is_a?(File)
