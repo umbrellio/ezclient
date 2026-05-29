@@ -765,6 +765,38 @@ RSpec.describe EzClient do
   end
 end
 
+RSpec.describe EzClient::Request::RedirectCookieState do
+  let(:cookies) { { sid: "a;b" } }
+
+  let(:ezclient_request) do
+    EzClient.new.request(:get, "http://example.com", cookies: cookies)
+  end
+
+  let(:http_request) { ezclient_request.send(:http_request) }
+  let(:redirect_request) { http_request.redirect("http://example.com/redirected") }
+  let(:response) { Struct.new(:headers, :request).new(HTTP::Headers.coerce({}), http_request) }
+
+  it "preserves request cookie values that require quoting" do
+    described_class.new(response).apply_to(redirect_request)
+
+    expect(redirect_request.headers[HTTP::Headers::COOKIE].to_s).to eq('sid="a;b"')
+  end
+
+  context "when request has a full Cookie header string" do
+    let(:cookies) { {} }
+
+    before do
+      http_request.headers[HTTP::Headers::COOKIE] = 'sid="a;b"; path=/'
+    end
+
+    it "round-trips every parsed cookie pair to the redirect request" do
+      described_class.new(response).apply_to(redirect_request)
+
+      expect(redirect_request.headers[HTTP::Headers::COOKIE].to_s).to eq('sid="a;b"; path=/')
+    end
+  end
+end
+
 RSpec.describe EzClient::HttprbCompatibility do
   context "when basic auth expects keyword arguments" do
     let(:client_class) do
