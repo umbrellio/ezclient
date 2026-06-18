@@ -13,8 +13,8 @@ require_relative "ezclient/errors"
 require_relative "ezclient/check_options"
 
 module EzClient
-  def self.new(*args)
-    Client.new(*args)
+  def self.new(*)
+    Client.new(*)
   end
 
   def self.get_time

@@ -40,11 +40,11 @@ if EzClient::HttprbCompatibility.httprb_v6_or_later?
           body    = build_http_rb_response_body_from_webmock_response(webmock_response)
 
           EzClient::HttprbCompatibility.response(
-            status: status,
+            status:,
             version: "1.1",
-            headers: headers,
-            body: body,
-            request: request,
+            headers:,
+            body:,
+            request:,
           )
         end
       end

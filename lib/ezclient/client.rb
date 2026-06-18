@@ -32,23 +32,23 @@ class EzClient::Client
 
     if keep_alive_timeout
       client = persistent_client_registry.for(
-        url, ssl_context: ssl_context, timeout: keep_alive_timeout
+        url, ssl_context:, timeout: keep_alive_timeout
       )
     else
       client = HTTP::Client.new
     end
 
-    EzClient::Request.new(verb, url, client: client, **options).tap do |request|
+    EzClient::Request.new(verb, url, client:, **options).tap do |request|
       request.api_auth!(*api_auth) if api_auth
     end
   end
 
-  def perform(*args, **kwargs)
-    request(*args, **kwargs).perform
+  def perform(*, **)
+    request(*, **).perform
   end
 
-  def perform!(*args, **kwargs)
-    request(*args, **kwargs).perform!
+  def perform!(*, **)
+    request(*, **).perform!
   end
 
   private
