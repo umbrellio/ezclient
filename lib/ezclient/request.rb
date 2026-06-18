@@ -86,10 +86,10 @@ class EzClient::Request
     end
   end
 
-  def api_auth!(*args)
+  def api_auth!(*)
     raise "ApiAuth gem is not loaded" unless defined?(ApiAuth)
 
-    ApiAuth.sign!(api_auth_request, *args)
+    ApiAuth.sign!(api_auth_request, *)
     self
   end
 
@@ -205,11 +205,11 @@ class EzClient::Request
     EzClient::HttprbCompatibility.redirector(options)
   end
 
-  def with_retry(&block)
+  def with_retry(&)
     retries = 0
 
     begin
-      retry_on_connection_error(&block)
+      retry_on_connection_error(&)
     rescue *retried_exceptions => error
       if retries < max_retries.to_i
         retries += 1
@@ -298,7 +298,7 @@ class EzClient::Request
       case options[:basic_auth]
       when Array
         user, password = options[:basic_auth]
-        { user: user, pass: password }
+        { user:, pass: password }
       when Hash
         options[:basic_auth]
       end

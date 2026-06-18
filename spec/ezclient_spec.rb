@@ -52,7 +52,7 @@ RSpec.describe EzClient do
     end
 
     context "when headers request option is provided" do
-      let(:request_options) { { headers: headers } }
+      let(:request_options) { { headers: } }
       let(:headers) { { some_header: 1 } }
 
       it "makes request with proper headers" do
@@ -78,7 +78,7 @@ RSpec.describe EzClient do
       end
 
       context "when cookies request option is provided" do
-        let(:request_options) { { headers: headers, cookies: cookies } }
+        let(:request_options) { { headers:, cookies: } }
         let(:cookies) { { a: 1 } }
 
         it "makes request with proper headers" do
@@ -137,7 +137,7 @@ RSpec.describe EzClient do
     end
 
     context "when params request option is provided" do
-      let(:request_options) { { params: params } }
+      let(:request_options) { { params: } }
       let(:params) { { a: 1 } }
 
       it "makes proper request" do
@@ -184,7 +184,7 @@ RSpec.describe EzClient do
     end
 
     context "when on_complete callback is provided" do
-      let(:client_options) { { on_complete: on_complete } }
+      let(:client_options) { { on_complete: } }
       let(:calls) { [] }
 
       let(:on_complete) do
@@ -265,7 +265,7 @@ RSpec.describe EzClient do
     end
 
     context "when on_error callback is provided" do
-      let(:client_options) { { on_error: on_error } }
+      let(:client_options) { { on_error: } }
       let(:calls) { [] }
 
       let(:on_error) do
@@ -285,7 +285,7 @@ RSpec.describe EzClient do
     end
 
     context "when error_wrapper callback is provided" do
-      let(:client_options) { { error_wrapper: error_wrapper } }
+      let(:client_options) { { error_wrapper: } }
       let(:calls) { [] }
 
       let(:error_wrapper) do
@@ -314,7 +314,7 @@ RSpec.describe EzClient do
     end
 
     context "when on_retry callback is provided" do
-      let(:client_options) { { on_retry: on_retry } }
+      let(:client_options) { { on_retry: } }
       let(:request_options) { { metadata: :smth } }
       let(:calls) { [] }
 
@@ -549,7 +549,7 @@ RSpec.describe EzClient do
       end
 
       context "when on_retry callback is provided" do
-        let(:client_options) { { on_retry: on_retry } }
+        let(:client_options) { { on_retry: } }
         let(:request_options) { { retry_exceptions: SomeError, metadata: :smth } }
         let(:calls) { [] }
 
@@ -669,7 +669,7 @@ RSpec.describe EzClient do
     context "when follow redirect has on_redirect callback" do
       let(:verb) { :get }
       let(:calls) { [] }
-      let(:request_options) { { follow: { on_redirect: on_redirect } } }
+      let(:request_options) { { follow: { on_redirect: } } }
 
       let(:on_redirect) do
         proc do |response, redirect_request|
@@ -769,7 +769,7 @@ RSpec.describe EzClient::Request::RedirectCookieState do
   let(:cookies) { { sid: "a;b" } }
 
   let(:ezclient_request) do
-    EzClient.new.request(:get, "http://example.com", cookies: cookies)
+    EzClient.new.request(:get, "http://example.com", cookies:)
   end
 
   let(:http_request) { ezclient_request.send(:http_request) }
@@ -804,7 +804,7 @@ RSpec.describe EzClient::HttprbCompatibility do
         attr_reader :credentials
 
         def basic_auth(user:, pass:)
-          @credentials = { user: user, pass: pass }
+          @credentials = { user:, pass: }
           self
         end
       end
@@ -824,7 +824,7 @@ RSpec.describe EzClient::HttprbCompatibility do
         attr_reader :options
 
         def initialize(max_hops:)
-          @options = { max_hops: max_hops }
+          @options = { max_hops: }
         end
       end
     end
@@ -844,7 +844,7 @@ RSpec.describe EzClient::HttprbCompatibility do
         attr_reader :attributes
 
         def initialize(status:, headers:)
-          @attributes = { status: status, headers: headers }
+          @attributes = { status:, headers: }
         end
       end
     end

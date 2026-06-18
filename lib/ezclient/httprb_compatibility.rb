@@ -41,7 +41,7 @@ module EzClient::HttprbCompatibility
     if client_supports_build_request?
       HTTP.persistent(origin, timeout: keep_alive_timeout)
     else
-      HTTP::Client.new(persistent: origin, keep_alive_timeout: keep_alive_timeout)
+      HTTP::Client.new(persistent: origin, keep_alive_timeout:)
     end
   end
 
